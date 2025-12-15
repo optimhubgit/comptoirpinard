@@ -1,4 +1,4 @@
-# Sélection Pinard Noël 2025
+# Le Club BonBouchon 2025
 
 Plateforme d'achat groupé de caisses de vins pour Noël.
 
@@ -20,7 +20,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIs...
 GMAIL_USER=julien@optimhub.com
 GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx
-ADMIN_PASSWORD=Pinard25!
+ADMIN_PASSWORD=Vins25!
 NEXT_PUBLIC_BASE_URL=https://votre-site.vercel.app
 ```
 

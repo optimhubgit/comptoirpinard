@@ -5,7 +5,7 @@ function generateToken() {
   const today = new Date().toISOString().split('T')[0]
   return crypto
     .createHash('sha256')
-    .update((process.env.ADMIN_PASSWORD || 'default') + today + 'selection-pinard-secret')
+    .update((process.env.ADMIN_PASSWORD || 'default') + today + 'selection-vins-secret')
     .digest('hex')
 }
 
@@ -35,13 +35,13 @@ export function verifyAdminToken(token) {
   const today = new Date().toISOString().split('T')[0]
   const validToken = crypto
     .createHash('sha256')
-    .update(process.env.ADMIN_PASSWORD + today + 'selection-pinard-secret')
+    .update(process.env.ADMIN_PASSWORD + today + 'selection-vins-secret')
     .digest('hex')
   
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
   const yesterdayToken = crypto
     .createHash('sha256')
-    .update(process.env.ADMIN_PASSWORD + yesterday + 'selection-pinard-secret')
+    .update(process.env.ADMIN_PASSWORD + yesterday + 'selection-vins-secret')
     .digest('hex')
   
   return token === validToken || token === yesterdayToken

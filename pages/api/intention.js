@@ -70,9 +70,9 @@ export default async function handler(req, res) {
 
     // Email de confirmation au client
     await transporter.sendMail({
-      from: `"Club Vins Entre Amis" <${process.env.GMAIL_USER}>`,
+      from: `"Le Club BonBouchon" <${process.env.GMAIL_USER}>`,
       to: email,
-      subject: '🍷 Intention enregistrée - Sélection Pinard Noël',
+      subject: '🍷 Intention enregistrée - Le Club BonBouchon',
       html: `
         <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto;">
           <div style="background: linear-gradient(135deg, #4A1F24 0%, #722F37 100%); color: #FAF7F2; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
@@ -87,7 +87,7 @@ export default async function handler(req, res) {
             </div>
             <p><strong>📋 Prochaines étapes :</strong></p>
             <p>Dès que 3 personnes sont intéressées par une caisse, vous recevrez un lien de paiement par email.</p>
-            <p style="text-align: center; color: #666; font-size: 14px; margin-top: 30px;">Club Vins Entre Amis — Sélection par François</p>
+            <p style="text-align: center; color: #666; font-size: 14px; margin-top: 30px;">Le Club BonBouchon — Sélection par François</p>
           </div>
         </div>
       `
@@ -95,7 +95,7 @@ export default async function handler(req, res) {
 
     // Email à l'admin
     await transporter.sendMail({
-      from: `"Club Vins Entre Amis" <${process.env.GMAIL_USER}>`,
+      from: `"Le Club BonBouchon" <${process.env.GMAIL_USER}>`,
       to: process.env.GMAIL_USER,
       subject: `📝 Nouvelle intention - ${name}`,
       html: `
@@ -125,7 +125,7 @@ export default async function handler(req, res) {
 
         for (const intention of (allIntentions || [])) {
           await transporter.sendMail({
-            from: `"Club Vins Entre Amis" <${process.env.GMAIL_USER}>`,
+            from: `"Le Club BonBouchon" <${process.env.GMAIL_USER}>`,
             to: intention.email,
             subject: `🎉 Caisse ${info?.nom} complète ! 3 intéressés atteints`,
             html: `

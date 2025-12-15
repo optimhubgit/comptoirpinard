@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
+import Link from 'next/link'
 
 export default function Home() {
   const [filter, setFilter] = useState('all')
   const [counts, setCounts] = useState({})
   const [caissesData, setCaissesData] = useState([])
   const [loadingCartons, setLoadingCartons] = useState(true)
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '', cartons: [], message: '' })
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', cartons: [], message: '', acceptCgv: false })
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
@@ -50,6 +51,10 @@ export default function Home() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!formData.acceptCgv) {
+      setError('Veuillez accepter les Conditions Générales de Vente')
+      return
+    }
     setLoading(true)
     setError('')
     try {
@@ -61,7 +66,7 @@ export default function Home() {
       const data = await res.json()
       if (res.ok) {
         setSuccess(true)
-        setFormData({ name: '', email: '', phone: '', cartons: [], message: '' })
+        setFormData({ name: '', email: '', phone: '', cartons: [], message: '', acceptCgv: false })
         fetchCounts()
       } else {
         setError(data.error || 'Une erreur est survenue')
@@ -78,8 +83,9 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Sélection Pinard Noël 2025 | Club Vins Entre Amis</title>
+        <title>Le Club BonBouchon | Sélection Vins Noël 2025</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="description" content="Achat groupé de vins de qualité entre amis. Caisses de 6 bouteilles sélectionnées par François." />
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet" />
       </Head>
 
@@ -418,6 +424,38 @@ export default function Home() {
           outline: none; 
           border-color: var(--wine); 
         }
+        
+        /* CHECKBOX CGV */
+        .checkbox-group {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.75rem;
+          margin: 1.25rem 0;
+          padding: 1rem;
+          background: #f9f9f9;
+          border-radius: 8px;
+        }
+        .checkbox-group input[type="checkbox"] {
+          width: 20px;
+          height: 20px;
+          margin-top: 0.1rem;
+          cursor: pointer;
+          accent-color: var(--wine);
+        }
+        .checkbox-group label {
+          font-size: 0.9rem;
+          color: #555;
+          cursor: pointer;
+          line-height: 1.5;
+        }
+        .checkbox-group a {
+          color: var(--wine);
+          text-decoration: underline;
+        }
+        .checkbox-group a:hover {
+          color: var(--wine-dark);
+        }
+        
         .submit-btn { 
           width: 100%; 
           padding: 1rem; 
@@ -506,9 +544,11 @@ export default function Home() {
         /* FOOTER */
         footer { 
           text-align: center; 
-          padding: 1.5rem; 
+          padding: 2rem 1rem; 
           color: #666; 
           font-size: 0.85rem; 
+          background: white;
+          margin-top: 0;
         }
         footer a {
           color: var(--wine);
@@ -516,6 +556,16 @@ export default function Home() {
         }
         footer a:hover {
           text-decoration: underline;
+        }
+        .footer-links {
+          margin: 1rem 0;
+          display: flex;
+          justify-content: center;
+          gap: 2rem;
+          flex-wrap: wrap;
+        }
+        .footer-links a {
+          font-size: 0.8rem;
         }
         
         /* RESPONSIVE */
@@ -550,6 +600,7 @@ export default function Home() {
             font-size: 0.85rem; 
           }
           .about-section { padding: 1.25rem; }
+          .footer-links { gap: 1rem; }
         }
         
         @media (max-width: 400px) {
@@ -562,9 +613,9 @@ export default function Home() {
       `}</style>
 
       <header className="hero">
-        <h1>🍷 Sélection Pinard Noël 2025</h1>
+        <h1>🍷 Le Club BonBouchon</h1>
         <p>Caisses de 6 bouteilles sélectionnées par François, à partager entre amis. Système d'achat groupé : 3 personnes minimum par type de caisse.</p>
-        <span className="badge-hero">Retrait chez François • Décembre 2025</span>
+        <span className="badge-hero">Sélection Noël 2025 • Retrait chez François</span>
       </header>
 
       <main className="container">
@@ -577,10 +628,10 @@ export default function Home() {
           <div className="about-content">
             <div className="about-text">
               <p>
-                <strong>François</strong>, passionné de vins et amateur éclairé, a soigneusement composé cette sélection de Noël 2025 en partenariat avec <strong>NRJ Wines</strong>, grossiste parisien reconnu pour son expertise et son engagement envers l'excellence.
+                <strong>François</strong>, passionné de vins et amateur éclairé, a soigneusement composé cette sélection de Noël 2025 en collaboration avec des vignerons d'exception, attachés à l'expression authentique de leur terroir.
               </p>
               <p>
-                NRJ Wines collabore avec des vignerons d'exception, attachés à l'expression authentique de leur terroir. Chaque bouteille de notre sélection provient de domaines soigneusement choisis pour leur savoir-faire et la qualité irréprochable de leurs cuvées.
+                Chaque bouteille de notre sélection provient de domaines soigneusement choisis pour leur savoir-faire et la qualité irréprochable de leurs cuvées.
               </p>
               <p>
                 De Bordeaux à la Bourgogne, découvrez des vins qui racontent une histoire : celle de vignerons passionnés et de terroirs uniques, sélectionnés pour vous offrir une expérience œnologique mémorable en cette fin d'année.
@@ -706,8 +757,21 @@ export default function Home() {
               <label>Message (optionnel)</label>
               <textarea value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})} rows={3} placeholder="Une question ? Un commentaire ?"></textarea>
             </div>
-            <button type="submit" className="submit-btn" disabled={loading || formData.cartons.length === 0}>
-              {loading ? 'Envoi en cours...' : formData.cartons.length === 0 ? 'Sélectionnez au moins un type de caisse' : `Valider mon intention (${formData.cartons.length} caisse${formData.cartons.length > 1 ? 's' : ''})`}
+
+            <div className="checkbox-group">
+              <input 
+                type="checkbox" 
+                id="acceptCgv" 
+                checked={formData.acceptCgv}
+                onChange={e => setFormData({...formData, acceptCgv: e.target.checked})}
+              />
+              <label htmlFor="acceptCgv">
+                J'ai lu et j'accepte les <Link href="/cgv" target="_blank">Conditions Générales de Vente</Link> et la <Link href="/confidentialite" target="_blank">Politique de Confidentialité</Link>. Je comprends que mon intention ne constitue pas une commande ferme et que le paiement ne sera requis qu'une fois le seuil de 3 participants atteint.
+              </label>
+            </div>
+
+            <button type="submit" className="submit-btn" disabled={loading || formData.cartons.length === 0 || !formData.acceptCgv}>
+              {loading ? 'Envoi en cours...' : formData.cartons.length === 0 ? 'Sélectionnez au moins un type de caisse' : !formData.acceptCgv ? 'Acceptez les CGV pour continuer' : `Valider mon intention (${formData.cartons.length} caisse${formData.cartons.length > 1 ? 's' : ''})`}
             </button>
           </form>
         )}
@@ -740,11 +804,13 @@ export default function Home() {
       </section>
 
       <footer>
-        <p>🍷 Sélection Pinard Noël 2025 — Vins sélectionnés par François</p>
-        <p style={{ marginTop: '0.5rem', fontSize: '0.8rem' }}>
-          En partenariat avec <a href="https://nrjwines.com" target="_blank" rel="noopener noreferrer">NRJ Wines</a>
-        </p>
-        <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', opacity: 0.7 }}>L'abus d'alcool est dangereux pour la santé. À consommer avec modération.</p>
+        <p>🍷 Le Club BonBouchon — Sélection Noël 2025</p>
+        <p style={{ marginTop: '0.5rem' }}>Vins sélectionnés par François</p>
+        <div className="footer-links">
+          <Link href="/cgv">Conditions Générales de Vente</Link>
+          <Link href="/confidentialite">Politique de Confidentialité</Link>
+        </div>
+        <p style={{ marginTop: '1rem', fontSize: '0.75rem', opacity: 0.7 }}>L'abus d'alcool est dangereux pour la santé. À consommer avec modération.</p>
       </footer>
     </>
   )

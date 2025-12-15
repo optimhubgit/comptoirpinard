@@ -110,7 +110,7 @@ export default function Admin() {
   return (
     <>
       <Head>
-        <title>Administration | Sélection Pinard</title>
+        <title>Administration | Sélection Vins</title>
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
 
@@ -191,7 +191,7 @@ export default function Admin() {
         <aside className="sidebar">
           <div className="sidebar-header">
             <h1>🍷 Admin</h1>
-            <p>Sélection Pinard Noël</p>
+            <p>Le Club BonBouchon</p>
           </div>
           <nav className="nav-menu">
             <button className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}><span>📊</span> Dashboard</button>

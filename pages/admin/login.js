@@ -38,7 +38,7 @@ export default function AdminLogin() {
   return (
     <>
       <Head>
-        <title>Admin - Connexion | Sélection Pinard</title>
+        <title>Admin - Connexion | Sélection Vins</title>
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet" />
       </Head>
 
@@ -78,7 +78,7 @@ export default function AdminLogin() {
       <div className="login-container">
         <div className="logo"><span>🍷</span></div>
         <h1>Administration</h1>
-        <p className="subtitle">Sélection Pinard Noël</p>
+        <p className="subtitle">Le Club BonBouchon</p>
         {error && <div className="error">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
