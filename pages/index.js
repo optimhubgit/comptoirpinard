@@ -78,7 +78,7 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Sélection Pinard Noël 2024 | Club Vins Entre Amis</title>
+        <title>Sélection Pinard Noël 2025 | Club Vins Entre Amis</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet" />
       </Head>
@@ -148,6 +148,52 @@ export default function Home() {
           padding: 0 1rem;
         }
         
+        /* ABOUT SECTION */
+        .about-section {
+          background: white;
+          border-radius: 16px;
+          padding: 2rem;
+          margin-bottom: 2.5rem;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        .about-content {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 2rem;
+          align-items: center;
+        }
+        .about-text p {
+          margin-bottom: 1rem;
+          color: #555;
+          font-size: 0.95rem;
+          line-height: 1.7;
+        }
+        .about-text p:last-child {
+          margin-bottom: 0;
+        }
+        .about-highlight {
+          background: linear-gradient(135deg, var(--wine-dark) 0%, var(--wine) 100%);
+          color: white;
+          padding: 2rem;
+          border-radius: 12px;
+          text-align: center;
+        }
+        .about-highlight h3 {
+          font-family: 'Playfair Display', serif;
+          font-size: 1.5rem;
+          margin-bottom: 1rem;
+        }
+        .about-highlight p {
+          opacity: 0.9;
+          font-size: 0.9rem;
+          line-height: 1.6;
+        }
+        .domaines-list {
+          margin-top: 1rem;
+          font-size: 0.8rem;
+          opacity: 0.8;
+        }
+        
         /* FILTERS */
         .filters { 
           display: flex; 
@@ -208,7 +254,7 @@ export default function Home() {
           background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); 
         }
         
-        /* BADGE - CORRIGÉ */
+        /* BADGE */
         .caisse-badge { 
           position: absolute; 
           top: 0.75rem; 
@@ -464,8 +510,24 @@ export default function Home() {
           color: #666; 
           font-size: 0.85rem; 
         }
+        footer a {
+          color: var(--wine);
+          text-decoration: none;
+        }
+        footer a:hover {
+          text-decoration: underline;
+        }
         
         /* RESPONSIVE */
+        @media (max-width: 768px) {
+          .about-content {
+            grid-template-columns: 1fr;
+          }
+          .about-highlight {
+            order: -1;
+          }
+        }
+        
         @media (max-width: 600px) { 
           .hero { padding: 2rem 1rem; }
           .container { padding: 1.5rem 0.75rem; }
@@ -487,6 +549,7 @@ export default function Home() {
             padding: 0.5rem 1rem; 
             font-size: 0.85rem; 
           }
+          .about-section { padding: 1.25rem; }
         }
         
         @media (max-width: 400px) {
@@ -499,12 +562,40 @@ export default function Home() {
       `}</style>
 
       <header className="hero">
-        <h1>🍷 Sélection Pinard Noël 2024</h1>
+        <h1>🍷 Sélection Pinard Noël 2025</h1>
         <p>Caisses de 6 bouteilles sélectionnées par François, à partager entre amis. Système d'achat groupé : 3 personnes minimum par type de caisse.</p>
-        <span className="badge-hero">Retrait chez François • Décembre 2024</span>
+        <span className="badge-hero">Retrait chez François • Décembre 2025</span>
       </header>
 
       <main className="container">
+        
+        {/* SECTION À PROPOS */}
+        <section className="about-section">
+          <h2 className="section-title">Notre Sélection</h2>
+          <p className="section-subtitle">Des vins d'exception sélectionnés avec passion</p>
+          
+          <div className="about-content">
+            <div className="about-text">
+              <p>
+                <strong>François</strong>, passionné de vins et amateur éclairé, a soigneusement composé cette sélection de Noël 2025 en partenariat avec <strong>NRJ Wines</strong>, grossiste parisien reconnu pour son expertise et son engagement envers l'excellence.
+              </p>
+              <p>
+                NRJ Wines collabore avec des vignerons d'exception, attachés à l'expression authentique de leur terroir. Chaque bouteille de notre sélection provient de domaines soigneusement choisis pour leur savoir-faire et la qualité irréprochable de leurs cuvées.
+              </p>
+              <p>
+                De Bordeaux à la Bourgogne, découvrez des vins qui racontent une histoire : celle de vignerons passionnés et de terroirs uniques, sélectionnés pour vous offrir une expérience œnologique mémorable en cette fin d'année.
+              </p>
+            </div>
+            <div className="about-highlight">
+              <h3>🏆 Domaines Partenaires</h3>
+              <p>Notre sélection met à l'honneur des domaines reconnus pour leur excellence :</p>
+              <p className="domaines-list">
+                Domaine Perraud • Domaine Chantal Lescure • Domaine Chofflet • Domaine Marchand-Grillot • Domaine Charly Nicolle • Domaine Saumaize Michelin • Domaine Alex Gambal • Domaine Brintet • Emmanuel Roux • Domaine de l'Aurage
+              </p>
+            </div>
+          </div>
+        </section>
+
         <h2 className="section-title">Nos Caisses</h2>
         <p className="section-subtitle">Sélectionnez un ou plusieurs types de caisse pour manifester votre intérêt</p>
 
@@ -649,8 +740,11 @@ export default function Home() {
       </section>
 
       <footer>
-        <p>🍷 Sélection Pinard Noël 2024 — Vins sélectionnés par François</p>
-        <p style={{ marginTop: '0.5rem', fontSize: '0.8rem' }}>L'abus d'alcool est dangereux pour la santé. À consommer avec modération.</p>
+        <p>🍷 Sélection Pinard Noël 2025 — Vins sélectionnés par François</p>
+        <p style={{ marginTop: '0.5rem', fontSize: '0.8rem' }}>
+          En partenariat avec <a href="https://nrjwines.com" target="_blank" rel="noopener noreferrer">NRJ Wines</a>
+        </p>
+        <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', opacity: 0.7 }}>L'abus d'alcool est dangereux pour la santé. À consommer avec modération.</p>
       </footer>
     </>
   )

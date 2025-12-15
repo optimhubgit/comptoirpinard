@@ -1,5 +1,5 @@
 -- =============================================
--- SCHEMA SELECTION PINARD NOEL 2024
+-- SCHEMA SELECTION PINARD NOEL 2025
 -- Exécuter dans Supabase SQL Editor
 -- =============================================
 

@@ -1,4 +1,4 @@
-# Sélection Pinard Noël 2024
+# Sélection Pinard Noël 2025
 
 Plateforme d'achat groupé de caisses de vins pour Noël.
 
