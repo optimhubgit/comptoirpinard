@@ -1,0 +1,303 @@
+import { useState, useEffect } from 'react'
+import Head from 'next/head'
+
+export default function Home() {
+  const [filter, setFilter] = useState('all')
+  const [counts, setCounts] = useState({})
+  const [caissesData, setCaissesData] = useState([])
+  const [loadingCartons, setLoadingCartons] = useState(true)
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', cartons: [], message: '' })
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    fetchCartons()
+    fetchCounts()
+  }, [])
+
+  const fetchCartons = async () => {
+    try {
+      const res = await fetch('/api/cartons')
+      const data = await res.json()
+      setCaissesData(Array.isArray(data) ? data : [])
+    } catch (err) {
+      console.error('Erreur chargement cartons:', err)
+      setCaissesData([])
+    } finally {
+      setLoadingCartons(false)
+    }
+  }
+
+  const fetchCounts = async () => {
+    try {
+      const res = await fetch('/api/counts')
+      const data = await res.json()
+      setCounts(data || {})
+    } catch (err) {
+      console.error('Erreur chargement compteurs:', err)
+    }
+  }
+
+  const handleCheckboxChange = (cartonSlug) => {
+    setFormData(prev => ({
+      ...prev,
+      cartons: prev.cartons.includes(cartonSlug)
+        ? prev.cartons.filter(slug => slug !== cartonSlug)
+        : [...prev.cartons, cartonSlug]
+    }))
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/intention', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setSuccess(true)
+        setFormData({ name: '', email: '', phone: '', cartons: [], message: '' })
+        fetchCounts()
+      } else {
+        setError(data.error || 'Une erreur est survenue')
+      }
+    } catch (err) {
+      setError('Erreur de connexion')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filteredCaisses = caissesData.filter(c => filter === 'all' || c.type === filter)
+
+  return (
+    <>
+      <Head>
+        <title>Sélection Pinard Noël 2024 | Club Vins Entre Amis</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet" />
+      </Head>
+
+      <style jsx global>{`
+        :root { --wine-dark: #4A1F24; --wine: #722F37; --wine-light: #8B4049; --gold: #C9A962; --cream: #FAF7F2; --text: #2D2D2D; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Montserrat', sans-serif; background: var(--cream); color: var(--text); line-height: 1.6; }
+        .hero { background: linear-gradient(135deg, var(--wine-dark) 0%, var(--wine) 100%); color: var(--cream); padding: 4rem 2rem; text-align: center; }
+        .hero h1 { font-family: 'Playfair Display', serif; font-size: 3rem; margin-bottom: 1rem; }
+        .hero p { font-size: 1.1rem; opacity: 0.9; max-width: 600px; margin: 0 auto 2rem; }
+        .badge-hero { display: inline-block; background: var(--gold); color: var(--wine-dark); padding: 0.5rem 1.5rem; border-radius: 30px; font-weight: 600; font-size: 0.9rem; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 3rem 2rem; }
+        .section-title { font-family: 'Playfair Display', serif; font-size: 2rem; text-align: center; margin-bottom: 0.5rem; color: var(--wine-dark); }
+        .section-subtitle { text-align: center; color: #666; margin-bottom: 2rem; }
+        .filters { display: flex; justify-content: center; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        .filter-btn { padding: 0.75rem 1.5rem; border: 2px solid var(--wine); background: transparent; color: var(--wine); border-radius: 30px; cursor: pointer; font-weight: 500; transition: all 0.3s; }
+        .filter-btn:hover, .filter-btn.active { background: var(--wine); color: white; }
+        .caisses-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem; }
+        .caisse-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.1); transition: transform 0.3s, box-shadow 0.3s; }
+        .caisse-card:hover { transform: translateY(-5px); box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+        .caisse-header { background: linear-gradient(135deg, var(--wine-dark) 0%, var(--wine) 100%); color: white; padding: 1.5rem; position: relative; }
+        .caisse-header.blanc { background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); }
+        .caisse-badge { position: absolute; top: 1rem; right: 1rem; background: var(--gold); color: var(--wine-dark); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .caisse-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; margin-bottom: 0.25rem; }
+        .caisse-region { opacity: 0.9; font-size: 0.9rem; }
+        .caisse-body { padding: 1.5rem; }
+        .caisse-price { font-size: 2.5rem; font-weight: 700; color: var(--wine); margin-bottom: 0.5rem; }
+        .caisse-price span { font-size: 1rem; font-weight: 400; color: #666; }
+        .caisse-vins { margin: 1.5rem 0; }
+        .caisse-vins h4 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; color: #888; margin-bottom: 0.75rem; }
+        .vin-item { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        .vin-item:last-child { border-bottom: none; }
+        .vin-name { flex: 1; }
+        .vin-domaine { color: #888; font-size: 0.8rem; }
+        .vin-price { color: var(--wine); font-weight: 500; }
+        .progress-bar { background: #eee; border-radius: 10px; height: 8px; margin: 1rem 0; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--wine) 0%, var(--gold) 100%); border-radius: 10px; transition: width 0.5s; }
+        .progress-text { display: flex; justify-content: space-between; font-size: 0.85rem; color: #666; }
+        .caisse-select { width: 100%; padding: 1rem; background: var(--wine); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.3s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .caisse-select:hover { background: var(--wine-dark); }
+        .caisse-select.selected { background: var(--gold); color: var(--wine-dark); }
+        .form-section { background: white; border-radius: 16px; padding: 2rem; box-shadow: 0 10px 40px rgba(0,0,0,0.1); margin-top: 3rem; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-weight: 500; margin-bottom: 0.5rem; color: var(--wine-dark); }
+        .form-group input, .form-group textarea { width: 100%; padding: 1rem; border: 2px solid #eee; border-radius: 8px; font-size: 1rem; transition: border-color 0.3s; font-family: inherit; }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--wine); }
+        .submit-btn { width: 100%; padding: 1.25rem; background: linear-gradient(135deg, var(--wine) 0%, var(--wine-dark) 100%); color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; margin-top: 1rem; }
+        .submit-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(114, 47, 55, 0.3); }
+        .submit-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+        .success-message { background: #d4edda; color: #155724; padding: 2rem; border-radius: 8px; text-align: center; }
+        .error-message { background: #f8d7da; color: #721c24; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+        .selected-summary { background: var(--cream); padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+        .selected-summary h4 { color: var(--wine-dark); margin-bottom: 0.5rem; }
+        .how-it-works { background: var(--wine-dark); color: white; padding: 4rem 2rem; margin-top: 4rem; }
+        .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; max-width: 1000px; margin: 2rem auto 0; }
+        .step { text-align: center; }
+        .step-number { width: 50px; height: 50px; background: var(--gold); color: var(--wine-dark); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.25rem; margin: 0 auto 1rem; }
+        .step h3 { margin-bottom: 0.5rem; }
+        .step p { opacity: 0.8; font-size: 0.9rem; }
+        footer { text-align: center; padding: 2rem; color: #666; font-size: 0.9rem; }
+        @media (max-width: 768px) { .hero h1 { font-size: 2rem; } .caisses-grid { grid-template-columns: 1fr; } }
+      `}</style>
+
+      <header className="hero">
+        <h1>🍷 Sélection Pinard Noël 2024</h1>
+        <p>Caisses de 6 bouteilles sélectionnées par François, à partager entre amis. Achat groupé : 3 personnes minimum par caisse.</p>
+        <span className="badge-hero">Retrait chez François • Décembre 2024</span>
+      </header>
+
+      <main className="container">
+        <h2 className="section-title">Nos Caisses</h2>
+        <p className="section-subtitle">Sélectionnez une ou plusieurs caisses pour manifester votre intérêt</p>
+
+        <div className="filters">
+          <button className={`filter-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>Toutes</button>
+          <button className={`filter-btn ${filter === 'rouge' ? 'active' : ''}`} onClick={() => setFilter('rouge')}>🍷 Rouges</button>
+          <button className={`filter-btn ${filter === 'blanc' ? 'active' : ''}`} onClick={() => setFilter('blanc')}>🥂 Blancs</button>
+        </div>
+
+        {loadingCartons ? (
+          <p style={{ textAlign: 'center' }}>Chargement des caisses...</p>
+        ) : filteredCaisses.length === 0 ? (
+          <p style={{ textAlign: 'center' }}>Aucune caisse disponible pour le moment.</p>
+        ) : (
+          <div className="caisses-grid">
+            {filteredCaisses.map((caisse) => {
+              const count = counts[caisse.slug] || 0
+              const progress = Math.min((count / 3) * 100, 100)
+              const isSelected = formData.cartons.includes(caisse.slug)
+
+              return (
+                <div key={caisse.slug} className="caisse-card">
+                  <div className={`caisse-header ${caisse.type}`}>
+                    <span className="caisse-badge">{caisse.badge}</span>
+                    <h3 className="caisse-title">{caisse.nom}</h3>
+                    <p className="caisse-region">{caisse.region}</p>
+                  </div>
+                  <div className="caisse-body">
+                    <div className="caisse-price">{caisse.prix}€ <span>TTC la caisse</span></div>
+                    
+                    <div className="caisse-vins">
+                      <h4>Composition (6 bouteilles)</h4>
+                      {(caisse.vins || []).map((vin, i) => (
+                        <div key={i} className="vin-item">
+                          <div className="vin-name">
+                            2× {vin.nom}
+                            {vin.domaine && <div className="vin-domaine">{vin.domaine}</div>}
+                          </div>
+                          <div className="vin-price">{vin.prix}€</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="progress-bar">
+                      <div className="progress-fill" style={{ width: `${progress}%` }}></div>
+                    </div>
+                    <div className="progress-text">
+                      <span>{count}/3 intéressés</span>
+                      <span>{count >= 3 ? '✅ Objectif atteint !' : `${3 - count} de plus`}</span>
+                    </div>
+
+                    <button 
+                      className={`caisse-select ${isSelected ? 'selected' : ''}`}
+                      onClick={() => handleCheckboxChange(caisse.slug)}
+                    >
+                      {isSelected ? '✓ Sélectionnée' : 'Je suis intéressé(e)'}
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {success ? (
+          <div className="form-section success-message">
+            <h3>🎉 Merci pour votre intention !</h3>
+            <p>Vous recevrez un email de confirmation. Dès que 3 personnes seront intéressées par une caisse, nous vous enverrons le lien de paiement.</p>
+            <button className="submit-btn" onClick={() => setSuccess(false)} style={{ marginTop: '1rem', maxWidth: '300px' }}>
+              Nouvelle sélection
+            </button>
+          </div>
+        ) : (
+          <form className="form-section" onSubmit={handleSubmit} id="form">
+            <h2 className="section-title">Valider mon intention</h2>
+            <p className="section-subtitle">Remplissez vos coordonnées pour manifester votre intérêt</p>
+
+            {error && <div className="error-message">{error}</div>}
+
+            {formData.cartons.length > 0 && (
+              <div className="selected-summary">
+                <h4>Caisse(s) sélectionnée(s) :</h4>
+                {formData.cartons.map(slug => {
+                  const caisse = caissesData.find(c => c.slug === slug)
+                  return <div key={slug}>• {caisse?.nom} - {caisse?.prix}€</div>
+                })}
+                <strong style={{ display: 'block', marginTop: '0.5rem', color: 'var(--wine)' }}>
+                  Total : {formData.cartons.reduce((sum, slug) => sum + (caissesData.find(c => c.slug === slug)?.prix || 0), 0)}€
+                </strong>
+              </div>
+            )}
+
+            <div className="form-grid">
+              <div className="form-group">
+                <label>Nom complet *</label>
+                <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required placeholder="Votre nom" />
+              </div>
+              <div className="form-group">
+                <label>Email *</label>
+                <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required placeholder="votre@email.com" />
+              </div>
+              <div className="form-group">
+                <label>Téléphone</label>
+                <input type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} placeholder="06 12 34 56 78" />
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Message (optionnel)</label>
+              <textarea value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})} rows={3} placeholder="Une question ? Un commentaire ?"></textarea>
+            </div>
+            <button type="submit" className="submit-btn" disabled={loading || formData.cartons.length === 0}>
+              {loading ? 'Envoi en cours...' : formData.cartons.length === 0 ? 'Sélectionnez au moins une caisse' : `Valider mon intention (${formData.cartons.length} caisse${formData.cartons.length > 1 ? 's' : ''})`}
+            </button>
+          </form>
+        )}
+      </main>
+
+      <section className="how-it-works">
+        <h2 className="section-title" style={{ color: 'white' }}>Comment ça marche ?</h2>
+        <div className="steps">
+          <div className="step">
+            <div className="step-number">1</div>
+            <h3>Choisissez</h3>
+            <p>Sélectionnez les caisses qui vous intéressent et remplissez le formulaire.</p>
+          </div>
+          <div className="step">
+            <div className="step-number">2</div>
+            <h3>Attendez</h3>
+            <p>Dès que 3 personnes sont intéressées par une caisse, vous recevez le lien de paiement.</p>
+          </div>
+          <div className="step">
+            <div className="step-number">3</div>
+            <h3>Payez</h3>
+            <p>Réglez votre caisse en ligne. La commande est passée une fois les 3 paiements reçus.</p>
+          </div>
+          <div className="step">
+            <div className="step-number">4</div>
+            <h3>Récupérez</h3>
+            <p>Venez chercher votre caisse chez François en décembre. Santé !</p>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        <p>🍷 Sélection Pinard Noël 2024 — Vins sélectionnés par François</p>
+        <p style={{ marginTop: '0.5rem', fontSize: '0.8rem' }}>L'abus d'alcool est dangereux pour la santé. À consommer avec modération.</p>
+      </footer>
+    </>
+  )
+}
