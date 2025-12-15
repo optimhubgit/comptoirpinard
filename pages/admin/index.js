@@ -175,6 +175,7 @@ export default function Admin() {
         .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; font-family: inherit; }
         .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #722F37; }
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-row-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.75rem; }
         .caisse-card { border: 1px solid #eee; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: flex-start; }
         .caisse-card:hover { border-color: #722F37; }
         .caisse-info h4 { font-size: 1rem; margin-bottom: 0.25rem; }
@@ -182,7 +183,8 @@ export default function Admin() {
         .caisse-info .price { font-size: 1.25rem; font-weight: 700; color: #722F37; }
         .empty-state { text-align: center; padding: 3rem; color: #888; }
         .empty-state span { font-size: 3rem; display: block; margin-bottom: 1rem; }
-        @media (max-width: 768px) { .sidebar { width: 100%; position: relative; height: auto; } .main-content { margin-left: 0; } .admin-container { flex-direction: column; } .form-row { grid-template-columns: 1fr; } }
+        .prix-calcule { background: #d4edda; color: #155724; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; text-align: center; font-weight: 600; font-size: 1.1rem; }
+        @media (max-width: 768px) { .sidebar { width: 100%; position: relative; height: auto; } .main-content { margin-left: 0; } .admin-container { flex-direction: column; } .form-row { grid-template-columns: 1fr; } .form-row-3 { grid-template-columns: 1fr; } }
       `}</style>
 
       <div className="admin-container">
@@ -218,11 +220,12 @@ export default function Admin() {
                 <div className="card-header"><h3>État par caisse</h3></div>
                 <div className="card-body">
                   <table>
-                    <thead><tr><th>Caisse</th><th>Intentions</th><th>Payées</th><th>Statut</th></tr></thead>
+                    <thead><tr><th>Caisse</th><th>Prix</th><th>Intentions</th><th>Payées</th><th>Statut</th></tr></thead>
                     <tbody>
                       {Object.values(stats.statsByCaisse || {}).map((s, i) => (
                         <tr key={i}>
                           <td><strong>{s.carton?.nom || s.carton?.slug}</strong></td>
+                          <td>{s.carton?.prix}€</td>
                           <td>{s.total}/3</td>
                           <td>{s.paid}/3</td>
                           <td>{s.readyToBuy ? <span className="badge complete">✓ À commander</span> : s.readyToOrder ? <span className="badge paid">Prêt à payer</span> : <span className="badge pending">En attente</span>}</td>
@@ -268,7 +271,7 @@ export default function Admin() {
 
           {activeTab === 'cartons' && (
             <>
-              <div className="page-header"><h2>Cartons</h2><p>Gérez les caisses de vins disponibles</p></div>
+              <div className="page-header"><h2>Cartons</h2><p>Gérez les caisses de vins (prix calculé automatiquement)</p></div>
               <div className="card">
                 <div className="card-header">
                   <h3>Liste des cartons</h3>
@@ -283,8 +286,10 @@ export default function Admin() {
                         <div className="caisse-info">
                           <h4>{carton.nom}</h4>
                           <p><span className={`badge ${carton.type}`}>{carton.type}</span> {carton.region}</p>
-                          <p style={{ fontSize: '0.8rem', color: '#888' }}>{carton.vins?.length || 0} vins</p>
-                          <div className="price">{carton.prix}€</div>
+                          <p style={{ fontSize: '0.8rem', color: '#888' }}>
+                            {(carton.vins || []).map(v => `${v.quantite || 2}× ${v.nom}`).join(' • ')}
+                          </p>
+                          <div className="price">{carton.prix}€ <span style={{ fontSize: '0.75rem', fontWeight: 'normal', color: '#888' }}>(calculé auto)</span></div>
                         </div>
                         <div className="actions">
                           <button className="btn btn-secondary btn-sm" onClick={() => { setEditingCarton(carton); setShowCartonModal(true); }}>Modifier</button>
@@ -345,13 +350,41 @@ function CartonModal({ carton, onSave, onClose }) {
     nom: carton?.nom || '',
     region: carton?.region || '',
     type: carton?.type || 'rouge',
-    prix: carton?.prix || '',
-    vins: carton?.vins || [{ nom: '', prix: '', domaine: '' }, { nom: '', prix: '', domaine: '' }, { nom: '', prix: '', domaine: '' }]
+    vins: carton?.vins?.length > 0 ? carton.vins.map(v => ({
+      nom: v.nom || '',
+      prix: v.prix || '',
+      domaine: v.domaine || '',
+      quantite: v.quantite || 2
+    })) : [
+      { nom: '', prix: '', domaine: '', quantite: 2 },
+      { nom: '', prix: '', domaine: '', quantite: 2 },
+      { nom: '', prix: '', domaine: '', quantite: 2 }
+    ]
   })
+
+  // Calcul du prix en temps réel
+  const prixCalcule = formData.vins.reduce((sum, vin) => {
+    const prix = parseFloat(String(vin.prix || 0).replace('€', '').replace(',', '.')) || 0
+    const quantite = parseInt(vin.quantite) || 2
+    return sum + (prix * quantite)
+  }, 0)
 
   const updateVin = (index, field, value) => {
     const newVins = [...formData.vins]
     newVins[index] = { ...newVins[index], [field]: value }
+    setFormData({ ...formData, vins: newVins })
+  }
+
+  const addVin = () => {
+    setFormData({
+      ...formData,
+      vins: [...formData.vins, { nom: '', prix: '', domaine: '', quantite: 2 }]
+    })
+  }
+
+  const removeVin = (index) => {
+    if (formData.vins.length <= 1) return
+    const newVins = formData.vins.filter((_, i) => i !== index)
     setFormData({ ...formData, vins: newVins })
   }
 
@@ -370,29 +403,73 @@ function CartonModal({ carton, onSave, onClose }) {
         </div>
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
+            <div className="prix-calcule">
+              💰 Prix calculé : {Math.ceil(prixCalcule)}€
+            </div>
+
             <div className="form-row">
-              <div className="form-group"><label>Nom du carton</label><input type="text" value={formData.nom} onChange={e => setFormData({ ...formData, nom: e.target.value })} placeholder="Ex: Bordeaux Découverte" required /></div>
-              <div className="form-group"><label>Slug</label><input type="text" value={formData.slug} onChange={e => setFormData({ ...formData, slug: e.target.value })} placeholder="Ex: bordeaux-90" /></div>
+              <div className="form-group">
+                <label>Nom du carton</label>
+                <input type="text" value={formData.nom} onChange={e => setFormData({ ...formData, nom: e.target.value })} placeholder="Ex: Bordeaux Découverte" required />
+              </div>
+              <div className="form-group">
+                <label>Slug (auto)</label>
+                <input type="text" value={formData.slug} onChange={e => setFormData({ ...formData, slug: e.target.value })} placeholder="Ex: bordeaux-decouverte" />
+              </div>
             </div>
             <div className="form-row">
-              <div className="form-group"><label>Région</label><input type="text" value={formData.region} onChange={e => setFormData({ ...formData, region: e.target.value })} placeholder="Ex: Bordeaux" required /></div>
-              <div className="form-group"><label>Type</label><select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })}><option value="rouge">Rouge</option><option value="blanc">Blanc</option><option value="rose">Rosé</option></select></div>
+              <div className="form-group">
+                <label>Région</label>
+                <input type="text" value={formData.region} onChange={e => setFormData({ ...formData, region: e.target.value })} placeholder="Ex: Bordeaux" required />
+              </div>
+              <div className="form-group">
+                <label>Type</label>
+                <select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })}>
+                  <option value="rouge">Rouge</option>
+                  <option value="blanc">Blanc</option>
+                  <option value="rose">Rosé</option>
+                </select>
+              </div>
             </div>
-            <div className="form-group"><label>Prix TTC (€)</label><input type="number" value={formData.prix} onChange={e => setFormData({ ...formData, prix: parseInt(e.target.value) || '' })} placeholder="Ex: 90" required /></div>
-            <h4 style={{ marginBottom: '1rem', marginTop: '1.5rem' }}>Composition (3 vins × 2 bouteilles)</h4>
+
+            <h4 style={{ marginBottom: '1rem', marginTop: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              Composition des vins
+              <button type="button" className="btn btn-secondary btn-sm" onClick={addVin}>+ Ajouter un vin</button>
+            </h4>
+
             {formData.vins.map((vin, index) => (
-              <div key={index} style={{ background: '#f9f9f9', padding: '1rem', borderRadius: '8px', marginBottom: '0.75rem' }}>
-                <div className="form-row">
-                  <div className="form-group" style={{ marginBottom: '0.5rem' }}><label>Vin #{index + 1}</label><input type="text" value={vin.nom} onChange={e => updateVin(index, 'nom', e.target.value)} placeholder="Nom du vin" /></div>
-                  <div className="form-group" style={{ marginBottom: '0.5rem' }}><label>Prix unitaire</label><input type="text" value={vin.prix} onChange={e => updateVin(index, 'prix', e.target.value)} placeholder="Ex: 16,90€" /></div>
+              <div key={index} style={{ background: '#f9f9f9', padding: '1rem', borderRadius: '8px', marginBottom: '0.75rem', position: 'relative' }}>
+                {formData.vins.length > 1 && (
+                  <button 
+                    type="button" 
+                    onClick={() => removeVin(index)} 
+                    style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: '#dc3545', color: 'white', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', fontSize: '0.9rem' }}
+                  >×</button>
+                )}
+                <div className="form-row-3">
+                  <div className="form-group" style={{ marginBottom: '0.5rem' }}>
+                    <label>Nom du vin</label>
+                    <input type="text" value={vin.nom} onChange={e => updateVin(index, 'nom', e.target.value)} placeholder="Nom du vin" />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: '0.5rem' }}>
+                    <label>Prix unitaire (€)</label>
+                    <input type="number" step="0.01" value={vin.prix} onChange={e => updateVin(index, 'prix', e.target.value)} placeholder="16.90" />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: '0.5rem' }}>
+                    <label>Quantité</label>
+                    <input type="number" min="1" value={vin.quantite} onChange={e => updateVin(index, 'quantite', e.target.value)} placeholder="2" />
+                  </div>
                 </div>
-                <div className="form-group" style={{ marginBottom: 0 }}><label>Domaine</label><input type="text" value={vin.domaine} onChange={e => updateVin(index, 'domaine', e.target.value)} placeholder="Nom du domaine" /></div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Domaine (optionnel)</label>
+                  <input type="text" value={vin.domaine} onChange={e => updateVin(index, 'domaine', e.target.value)} placeholder="Nom du domaine" />
+                </div>
               </div>
             ))}
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>Annuler</button>
-            <button type="submit" className="btn btn-primary">Enregistrer</button>
+            <button type="submit" className="btn btn-primary">Enregistrer ({Math.ceil(prixCalcule)}€)</button>
           </div>
         </form>
       </div>

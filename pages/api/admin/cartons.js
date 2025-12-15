@@ -6,6 +6,22 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
+// Fonction pour calculer le prix du carton à partir des vins
+function calculerPrixCarton(vins) {
+  if (!vins || vins.length === 0) return 0
+  
+  const total = vins.reduce((sum, vin) => {
+    // Nettoyer le prix (enlever €, remplacer , par .)
+    const prixStr = String(vin.prix || 0).replace('€', '').replace(',', '.').trim()
+    const prix = parseFloat(prixStr) || 0
+    const quantite = vin.quantite || 2 // Par défaut 2 bouteilles
+    return sum + (prix * quantite)
+  }, 0)
+  
+  // Arrondi supérieur
+  return Math.ceil(total)
+}
+
 export default async function handler(req, res) {
   const token = req.headers.authorization?.replace('Bearer ', '')
   if (!verifyAdminToken(token)) {
@@ -32,8 +48,9 @@ export default async function handler(req, res) {
           vins: (c.carton_vins || []).sort((a, b) => (a.ordre || 0) - (b.ordre || 0)).map(v => ({
             id: v.id,
             nom: v.nom,
-            prix: `${v.prix}€`,
-            domaine: v.domaine || ''
+            prix: v.prix,
+            domaine: v.domaine || '',
+            quantite: v.quantite || 2
           }))
         }))
         
@@ -42,15 +59,24 @@ export default async function handler(req, res) {
       case 'POST':
         const { vins: newVins, ...cartonData } = req.body
         
+        // Préparer les vins avec quantité par défaut
+        const vinsAvecQuantite = (newVins || []).map(v => ({
+          ...v,
+          quantite: v.quantite || 2
+        }))
+        
+        // Calculer le prix automatiquement à partir des vins
+        const prixCalcule = calculerPrixCarton(vinsAvecQuantite)
+        
         const { data: newCarton, error: postError } = await supabase
           .from('cartons')
           .insert({
-            slug: cartonData.slug,
+            slug: cartonData.slug || cartonData.nom.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
             nom: cartonData.nom,
             region: cartonData.region,
             type: cartonData.type,
             badge: `${cartonData.type.charAt(0).toUpperCase() + cartonData.type.slice(1)} • ${cartonData.nom.includes('Prestige') ? 'Prestige' : 'Découverte'}`,
-            prix: cartonData.prix,
+            prix: prixCalcule,
             active: true,
             ordre: cartonData.ordre || 99
           })
@@ -62,12 +88,13 @@ export default async function handler(req, res) {
           return res.status(500).json({ error: postError.message })
         }
 
-        if (newVins && newVins.length > 0) {
-          const vinsToInsert = newVins.map((vin, index) => ({
+        if (vinsAvecQuantite.length > 0) {
+          const vinsToInsert = vinsAvecQuantite.map((vin, index) => ({
             carton_id: newCarton.id,
             nom: vin.nom,
             domaine: vin.domaine || null,
             prix: parseFloat(String(vin.prix).replace('€', '').replace(',', '.')) || 0,
+            quantite: vin.quantite || 2,
             ordre: index + 1
           })).filter(v => v.nom)
 
@@ -76,10 +103,19 @@ export default async function handler(req, res) {
           }
         }
 
-        return res.status(201).json(newCarton)
+        return res.status(201).json({ ...newCarton, prixCalcule })
 
       case 'PUT':
         const { id, vins: updateVins, carton_vins, ...updateData } = req.body
+        
+        // Préparer les vins avec quantité par défaut
+        const vinsUpdateAvecQuantite = (updateVins || []).map(v => ({
+          ...v,
+          quantite: v.quantite || 2
+        }))
+        
+        // Calculer le prix automatiquement à partir des vins
+        const prixUpdate = calculerPrixCarton(vinsUpdateAvecQuantite)
         
         const { data: updatedCarton, error: putError } = await supabase
           .from('cartons')
@@ -89,7 +125,7 @@ export default async function handler(req, res) {
             region: updateData.region,
             type: updateData.type,
             badge: `${updateData.type.charAt(0).toUpperCase() + updateData.type.slice(1)} • ${updateData.nom.includes('Prestige') ? 'Prestige' : 'Découverte'}`,
-            prix: updateData.prix,
+            prix: prixUpdate,
             updated_at: new Date().toISOString()
           })
           .eq('id', id)
@@ -101,14 +137,15 @@ export default async function handler(req, res) {
           return res.status(500).json({ error: putError.message })
         }
 
-        if (updateVins) {
+        if (vinsUpdateAvecQuantite) {
           await supabase.from('carton_vins').delete().eq('carton_id', id)
           
-          const vinsToInsert = updateVins.map((vin, index) => ({
+          const vinsToInsert = vinsUpdateAvecQuantite.map((vin, index) => ({
             carton_id: id,
             nom: vin.nom,
             domaine: vin.domaine || null,
             prix: parseFloat(String(vin.prix).replace('€', '').replace(',', '.')) || 0,
+            quantite: vin.quantite || 2,
             ordre: index + 1
           })).filter(v => v.nom)
 
@@ -117,7 +154,7 @@ export default async function handler(req, res) {
           }
         }
 
-        return res.status(200).json(updatedCarton)
+        return res.status(200).json({ ...updatedCarton, prixCalcule: prixUpdate })
 
       case 'DELETE':
         const { id: deleteId } = req.body
