@@ -1,7 +1,6 @@
 -- =============================================
--- SCHEMA SELECTION PINARD NOEL 2025
--- Exécuter dans Supabase SQL Editor
--- Prix calculés automatiquement : somme des (prix × quantité) arrondie au supérieur
+-- SCHEMA LE CLUB BONBOUCHON - NOËL 2025
+-- Avec gestion des lots (plusieurs cartons du même type)
 -- =============================================
 
 -- Supprimer les anciennes tables si elles existent
@@ -37,12 +36,16 @@ CREATE TABLE carton_vins (
 );
 
 -- Table des intentions de commande
+-- lot_number permet de regrouper par lots de 3
+-- lot_complete indique si le lot a atteint les 3 personnes
 CREATE TABLE intentions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
   email TEXT NOT NULL,
   phone TEXT,
   caisse TEXT NOT NULL,
+  lot_number INTEGER DEFAULT 1,
+  lot_complete BOOLEAN DEFAULT false,
   message TEXT,
   status TEXT DEFAULT 'pending',
   paid_at TIMESTAMP WITH TIME ZONE,
@@ -54,6 +57,7 @@ CREATE TABLE intentions (
 CREATE INDEX idx_intentions_caisse ON intentions(caisse);
 CREATE INDEX idx_intentions_email ON intentions(email);
 CREATE INDEX idx_intentions_status ON intentions(status);
+CREATE INDEX idx_intentions_lot ON intentions(caisse, lot_number);
 CREATE INDEX idx_cartons_slug ON cartons(slug);
 CREATE INDEX idx_cartons_active ON cartons(active);
 
@@ -62,22 +66,14 @@ ALTER TABLE cartons ENABLE ROW LEVEL SECURITY;
 ALTER TABLE carton_vins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE intentions ENABLE ROW LEVEL SECURITY;
 
--- Policies (permettre tout pour simplifier)
+-- Policies
 CREATE POLICY "Allow all cartons" ON cartons FOR ALL USING (true);
 CREATE POLICY "Allow all carton_vins" ON carton_vins FOR ALL USING (true);
 CREATE POLICY "Allow all intentions" ON intentions FOR ALL USING (true);
 
 -- =============================================
 -- INSERTION DES CARTONS
--- Prix = ceil(somme des prix × quantité)
 -- =============================================
-
--- Bordeaux Découverte: 2×16.90 + 2×9.50 + 2×14.50 = 81.80 → 82€
--- Bordeaux Prestige: 2×45 + 2×25 + 2×35 = 210€
--- Bourgogne Blanc Découverte: 2×12.20 + 2×17 + 2×29 = 116.40 → 117€
--- Bourgogne Blanc Prestige: 2×15.50 + 2×18 + 2×69 = 205€
--- Bourgogne Rouge Découverte: 2×15 + 2×23 + 2×25 = 126€
--- Bourgogne Rouge Prestige: 2×35 + 2×40 + 2×46 = 242€
 
 INSERT INTO cartons (slug, nom, region, type, badge, prix, active, ordre) VALUES
 ('bordeaux-decouverte', 'Bordeaux Découverte', 'Bordeaux', 'rouge', 'Rouge • Découverte', 82, true, 1),
@@ -144,8 +140,7 @@ SELECT id, 'Gevrey-Chambertin', 'Domaine Marchand Grillot', 46.00, 2, 3 FROM car
 -- =============================================
 SELECT 
   c.nom, 
-  c.prix as "Prix affiché",
-  CEIL(SUM(v.prix * v.quantite)) as "Prix calculé",
+  c.prix as "Prix",
   COUNT(v.id) as "Nb vins"
 FROM cartons c 
 LEFT JOIN carton_vins v ON v.carton_id = c.id 

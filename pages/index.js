@@ -101,7 +101,6 @@ export default function Home() {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Montserrat', sans-serif; background: var(--cream); color: var(--text); line-height: 1.6; }
         
-        /* HERO */
         .hero { 
           background: linear-gradient(135deg, var(--wine-dark) 0%, var(--wine) 100%); 
           color: var(--cream); 
@@ -131,14 +130,8 @@ export default function Home() {
           font-size: 0.85rem; 
         }
         
-        /* CONTAINER */
-        .container { 
-          max-width: 1200px; 
-          margin: 0 auto; 
-          padding: 2rem 1rem; 
-        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1rem; }
         
-        /* SECTIONS */
         .section-title { 
           font-family: 'Playfair Display', serif; 
           font-size: clamp(1.5rem, 4vw, 2rem); 
@@ -154,7 +147,6 @@ export default function Home() {
           padding: 0 1rem;
         }
         
-        /* ABOUT SECTION */
         .about-section {
           background: white;
           border-radius: 16px;
@@ -174,9 +166,7 @@ export default function Home() {
           font-size: 0.95rem;
           line-height: 1.7;
         }
-        .about-text p:last-child {
-          margin-bottom: 0;
-        }
+        .about-text p:last-child { margin-bottom: 0; }
         .about-highlight {
           background: linear-gradient(135deg, var(--wine-dark) 0%, var(--wine) 100%);
           color: white;
@@ -189,18 +179,9 @@ export default function Home() {
           font-size: 1.5rem;
           margin-bottom: 1rem;
         }
-        .about-highlight p {
-          opacity: 0.9;
-          font-size: 0.9rem;
-          line-height: 1.6;
-        }
-        .domaines-list {
-          margin-top: 1rem;
-          font-size: 0.8rem;
-          opacity: 0.8;
-        }
+        .about-highlight p { opacity: 0.9; font-size: 0.9rem; line-height: 1.6; }
+        .domaines-list { margin-top: 1rem; font-size: 0.8rem; opacity: 0.8; }
         
-        /* FILTERS */
         .filters { 
           display: flex; 
           justify-content: center; 
@@ -221,19 +202,14 @@ export default function Home() {
           font-size: 0.9rem;
           font-family: inherit;
         }
-        .filter-btn:hover, .filter-btn.active { 
-          background: var(--wine); 
-          color: white; 
-        }
+        .filter-btn:hover, .filter-btn.active { background: var(--wine); color: white; }
         
-        /* GRID CAISSES */
         .caisses-grid { 
           display: grid; 
           grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
           gap: 1.5rem; 
         }
         
-        /* CARTE CAISSE */
         .caisse-card { 
           background: white; 
           border-radius: 16px; 
@@ -248,7 +224,6 @@ export default function Home() {
           box-shadow: 0 12px 40px rgba(0,0,0,0.12); 
         }
         
-        /* HEADER CARTE */
         .caisse-header { 
           background: linear-gradient(135deg, var(--wine-dark) 0%, var(--wine) 100%); 
           color: white; 
@@ -256,11 +231,8 @@ export default function Home() {
           padding-top: 2.5rem;
           position: relative; 
         }
-        .caisse-header.blanc { 
-          background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); 
-        }
+        .caisse-header.blanc { background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); }
         
-        /* BADGE */
         .caisse-badge { 
           position: absolute; 
           top: 0.75rem; 
@@ -272,9 +244,6 @@ export default function Home() {
           font-size: 0.7rem; 
           font-weight: 600; 
           white-space: nowrap;
-          max-width: calc(100% - 1.5rem);
-          overflow: hidden;
-          text-overflow: ellipsis;
         }
         
         .caisse-title { 
@@ -282,14 +251,9 @@ export default function Home() {
           font-size: 1.25rem; 
           margin-bottom: 0.25rem; 
           line-height: 1.3;
-          padding-right: 0.5rem;
         }
-        .caisse-region { 
-          opacity: 0.9; 
-          font-size: 0.85rem; 
-        }
+        .caisse-region { opacity: 0.9; font-size: 0.85rem; }
         
-        /* BODY CARTE */
         .caisse-body { 
           padding: 1.25rem; 
           flex: 1;
@@ -302,17 +266,20 @@ export default function Home() {
           color: var(--wine); 
           margin-bottom: 0.25rem; 
         }
-        .caisse-price span { 
-          font-size: 0.9rem; 
-          font-weight: 400; 
-          color: #666; 
+        .caisse-price span { font-size: 0.9rem; font-weight: 400; color: #666; }
+        
+        .lots-info {
+          background: #e8f5e9;
+          color: #2e7d32;
+          padding: 0.5rem 0.75rem;
+          border-radius: 8px;
+          font-size: 0.8rem;
+          font-weight: 600;
+          margin-bottom: 0.75rem;
+          text-align: center;
         }
         
-        /* LISTE VINS */
-        .caisse-vins { 
-          margin: 1rem 0; 
-          flex: 1;
-        }
+        .caisse-vins { margin: 1rem 0; flex: 1; }
         .caisse-vins h4 { 
           font-size: 0.75rem; 
           text-transform: uppercase; 
@@ -330,23 +297,10 @@ export default function Home() {
           gap: 0.5rem;
         }
         .vin-item:last-child { border-bottom: none; }
-        .vin-name { 
-          flex: 1; 
-          min-width: 0;
-        }
-        .vin-domaine { 
-          color: #888; 
-          font-size: 0.75rem; 
-          margin-top: 0.1rem;
-        }
-        .vin-price { 
-          color: var(--wine); 
-          font-weight: 500; 
-          white-space: nowrap;
-          flex-shrink: 0;
-        }
+        .vin-name { flex: 1; min-width: 0; }
+        .vin-domaine { color: #888; font-size: 0.75rem; margin-top: 0.1rem; }
+        .vin-price { color: var(--wine); font-weight: 500; white-space: nowrap; flex-shrink: 0; }
         
-        /* PROGRESS BAR */
         .progress-bar { 
           background: #eee; 
           border-radius: 10px; 
@@ -368,7 +322,6 @@ export default function Home() {
           margin-bottom: 1rem;
         }
         
-        /* BOUTON SELECTION */
         .caisse-select { 
           width: 100%; 
           padding: 0.9rem; 
@@ -390,7 +343,6 @@ export default function Home() {
         .caisse-select:hover { background: var(--wine-dark); }
         .caisse-select.selected { background: var(--gold); color: var(--wine-dark); }
         
-        /* FORMULAIRE */
         .form-section { 
           background: white; 
           border-radius: 16px; 
@@ -420,12 +372,8 @@ export default function Home() {
           transition: border-color 0.3s; 
           font-family: inherit; 
         }
-        .form-group input:focus, .form-group textarea:focus { 
-          outline: none; 
-          border-color: var(--wine); 
-        }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--wine); }
         
-        /* CHECKBOX CGV */
         .checkbox-group {
           display: flex;
           align-items: flex-start;
@@ -448,13 +396,8 @@ export default function Home() {
           cursor: pointer;
           line-height: 1.5;
         }
-        .checkbox-group a {
-          color: var(--wine);
-          text-decoration: underline;
-        }
-        .checkbox-group a:hover {
-          color: var(--wine-dark);
-        }
+        .checkbox-group a { color: var(--wine); text-decoration: underline; }
+        .checkbox-group a:hover { color: var(--wine-dark); }
         
         .submit-btn { 
           width: 100%; 
@@ -476,7 +419,6 @@ export default function Home() {
         }
         .submit-btn:disabled { opacity: 0.7; cursor: not-allowed; }
         
-        /* MESSAGES */
         .success-message { 
           background: #d4edda; 
           color: #155724; 
@@ -497,13 +439,8 @@ export default function Home() {
           border-radius: 8px; 
           margin-bottom: 1rem; 
         }
-        .selected-summary h4 { 
-          color: var(--wine-dark); 
-          margin-bottom: 0.5rem; 
-          font-size: 0.95rem;
-        }
+        .selected-summary h4 { color: var(--wine-dark); margin-bottom: 0.5rem; font-size: 0.95rem; }
         
-        /* HOW IT WORKS */
         .how-it-works { 
           background: var(--wine-dark); 
           color: white; 
@@ -531,32 +468,18 @@ export default function Home() {
           font-size: 1.1rem; 
           margin: 0 auto 0.75rem; 
         }
-        .step h3 { 
-          margin-bottom: 0.4rem; 
-          font-size: 1rem;
-        }
-        .step p { 
-          opacity: 0.8; 
-          font-size: 0.85rem; 
-          line-height: 1.5;
-        }
+        .step h3 { margin-bottom: 0.4rem; font-size: 1rem; }
+        .step p { opacity: 0.8; font-size: 0.85rem; line-height: 1.5; }
         
-        /* FOOTER */
         footer { 
           text-align: center; 
           padding: 2rem 1rem; 
           color: #666; 
           font-size: 0.85rem; 
           background: white;
-          margin-top: 0;
         }
-        footer a {
-          color: var(--wine);
-          text-decoration: none;
-        }
-        footer a:hover {
-          text-decoration: underline;
-        }
+        footer a { color: var(--wine); text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
         .footer-links {
           margin: 1rem 0;
           display: flex;
@@ -564,51 +487,32 @@ export default function Home() {
           gap: 2rem;
           flex-wrap: wrap;
         }
-        .footer-links a {
-          font-size: 0.8rem;
-        }
+        .footer-links a { font-size: 0.8rem; }
         
-        /* RESPONSIVE */
         @media (max-width: 768px) {
-          .about-content {
-            grid-template-columns: 1fr;
-          }
-          .about-highlight {
-            order: -1;
-          }
+          .about-content { grid-template-columns: 1fr; }
+          .about-highlight { order: -1; }
         }
         
         @media (max-width: 600px) { 
           .hero { padding: 2rem 1rem; }
           .container { padding: 1.5rem 0.75rem; }
-          .caisses-grid { 
-            grid-template-columns: 1fr; 
-            gap: 1rem;
-          }
-          .caisse-header {
-            padding: 1rem;
-            padding-top: 2.25rem;
-          }
+          .caisses-grid { grid-template-columns: 1fr; gap: 1rem; }
+          .caisse-header { padding: 1rem; padding-top: 2.25rem; }
           .caisse-title { font-size: 1.1rem; }
           .caisse-body { padding: 1rem; }
           .caisse-price { font-size: 1.75rem; }
           .form-section { padding: 1.25rem; }
           .form-grid { grid-template-columns: 1fr; }
           .steps { grid-template-columns: 1fr 1fr; }
-          .filter-btn { 
-            padding: 0.5rem 1rem; 
-            font-size: 0.85rem; 
-          }
+          .filter-btn { padding: 0.5rem 1rem; font-size: 0.85rem; }
           .about-section { padding: 1.25rem; }
           .footer-links { gap: 1rem; }
         }
         
         @media (max-width: 400px) {
           .steps { grid-template-columns: 1fr; }
-          .badge-hero { 
-            font-size: 0.75rem; 
-            padding: 0.4rem 1rem; 
-          }
+          .badge-hero { font-size: 0.75rem; padding: 0.4rem 1rem; }
         }
       `}</style>
 
@@ -620,7 +524,6 @@ export default function Home() {
 
       <main className="container">
         
-        {/* SECTION À PROPOS */}
         <section className="about-section">
           <h2 className="section-title">Notre Sélection</h2>
           <p className="section-subtitle">Des vins d'exception sélectionnés avec passion</p>
@@ -663,8 +566,10 @@ export default function Home() {
         ) : (
           <div className="caisses-grid">
             {filteredCaisses.map((caisse) => {
-              const count = counts[caisse.slug] || 0
-              const progress = Math.min((count / 3) * 100, 100)
+              const countData = counts[caisse.slug] || { current: 0, completeLots: 0 }
+              const currentCount = typeof countData === 'object' ? countData.current : countData
+              const completeLots = typeof countData === 'object' ? countData.completeLots : 0
+              const progress = Math.min((currentCount / 3) * 100, 100)
               const isSelected = formData.cartons.includes(caisse.slug)
 
               return (
@@ -676,6 +581,12 @@ export default function Home() {
                   </div>
                   <div className="caisse-body">
                     <div className="caisse-price">{caisse.prix}€ <span>TTC la caisse</span></div>
+                    
+                    {completeLots > 0 && (
+                      <div className="lots-info">
+                        ✅ {completeLots} lot{completeLots > 1 ? 's' : ''} déjà complet{completeLots > 1 ? 's' : ''} !
+                      </div>
+                    )}
                     
                     <div className="caisse-vins">
                       <h4>Composition (6 bouteilles)</h4>
@@ -694,8 +605,8 @@ export default function Home() {
                       <div className="progress-fill" style={{ width: `${progress}%` }}></div>
                     </div>
                     <div className="progress-text">
-                      <span>{count}/3 intéressés</span>
-                      <span>{count >= 3 ? '✅ Objectif atteint !' : `${3 - count} de plus`}</span>
+                      <span>Lot en cours : {currentCount}/3</span>
+                      <span>{currentCount >= 3 ? '✅ Complet !' : `${3 - currentCount} de plus`}</span>
                     </div>
 
                     <button 
@@ -714,7 +625,7 @@ export default function Home() {
         {success ? (
           <div className="form-section success-message">
             <h3>🎉 Merci pour votre intention !</h3>
-            <p>Vous recevrez un email de confirmation. Dès que 3 personnes seront intéressées par un type de caisse, nous vous enverrons le lien de paiement.</p>
+            <p>Vous recevrez un email de confirmation. Dès que 3 personnes seront intéressées par un lot, nous vous enverrons le lien de paiement.</p>
             <button className="submit-btn" onClick={() => setSuccess(false)} style={{ marginTop: '1rem', maxWidth: '300px' }}>
               Nouvelle sélection
             </button>
@@ -788,7 +699,7 @@ export default function Home() {
           <div className="step">
             <div className="step-number">2</div>
             <h3>Attendez</h3>
-            <p>Dès que 3 personnes sont intéressées par un type de caisse, vous recevez le lien de paiement.</p>
+            <p>Dès que 3 personnes sont intéressées par un lot, vous recevez le lien de paiement.</p>
           </div>
           <div className="step">
             <div className="step-number">3</div>

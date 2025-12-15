@@ -21,21 +21,31 @@ export default async function handler(req, res) {
       return res.status(200).json({})
     }
 
-    const countPromises = cartons.map(async (carton) => {
-      const { count } = await supabase
+    const result = {}
+
+    for (const carton of cartons) {
+      // Compter les intentions du lot en cours (non complet)
+      const { count: currentLotCount } = await supabase
         .from('intentions')
         .select('*', { count: 'exact', head: true })
         .eq('caisse', carton.slug)
-      
-      return { caisse: carton.slug, count: count || 0 }
-    })
+        .eq('lot_complete', false)
 
-    const counts = await Promise.all(countPromises)
-    
-    const result = {}
-    counts.forEach(({ caisse, count }) => {
-      result[caisse] = count
-    })
+      // Compter le nombre de lots complets
+      const { data: completeLots } = await supabase
+        .from('intentions')
+        .select('lot_number')
+        .eq('caisse', carton.slug)
+        .eq('lot_complete', true)
+
+      // Nombre de lots complets = nombre d'intentions complètes / 3
+      const uniqueCompleteLots = [...new Set((completeLots || []).map(i => i.lot_number))]
+      
+      result[carton.slug] = {
+        current: currentLotCount || 0,        // Intentions du lot en cours
+        completeLots: uniqueCompleteLots.length  // Nombre de lots déjà complets
+      }
+    }
 
     res.status(200).json(result)
 
