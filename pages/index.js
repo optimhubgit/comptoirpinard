@@ -7,7 +7,7 @@ export default function Home() {
   const [counts, setCounts] = useState({})
   const [caissesData, setCaissesData] = useState([])
   const [loadingCartons, setLoadingCartons] = useState(true)
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '', cartons: [], message: '', acceptCgv: false })
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', cartons: {}, message: '', acceptCgv: false })
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
@@ -40,13 +40,20 @@ export default function Home() {
     }
   }
 
-  const handleCheckboxChange = (cartonSlug) => {
-    setFormData(prev => ({
-      ...prev,
-      cartons: prev.cartons.includes(cartonSlug)
-        ? prev.cartons.filter(slug => slug !== cartonSlug)
-        : [...prev.cartons, cartonSlug]
-    }))
+  const updateQuantity = (cartonSlug, delta) => {
+    setFormData(prev => {
+      const currentQty = prev.cartons[cartonSlug] || 0
+      const newQty = Math.max(0, Math.min(10, currentQty + delta))
+      const newCartons = { ...prev.cartons }
+      
+      if (newQty === 0) {
+        delete newCartons[cartonSlug]
+      } else {
+        newCartons[cartonSlug] = newQty
+      }
+      
+      return { ...prev, cartons: newCartons }
+    })
   }
 
   const handleSubmit = async (e) => {
@@ -55,18 +62,27 @@ export default function Home() {
       setError('Veuillez accepter les Conditions Générales de Vente')
       return
     }
+    const selectedCartons = Object.keys(formData.cartons).filter(k => formData.cartons[k] > 0)
+    if (selectedCartons.length === 0) {
+      setError('Veuillez sélectionner au moins une caisse')
+      return
+    }
+    
     setLoading(true)
     setError('')
     try {
       const res = await fetch('/api/intention', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          cartons: formData.cartons
+        })
       })
       const data = await res.json()
       if (res.ok) {
         setSuccess(true)
-        setFormData({ name: '', email: '', phone: '', cartons: [], message: '', acceptCgv: false })
+        setFormData({ name: '', email: '', phone: '', cartons: {}, message: '', acceptCgv: false })
         fetchCounts()
       } else {
         setError(data.error || 'Une erreur est survenue')
@@ -79,6 +95,12 @@ export default function Home() {
   }
 
   const filteredCaisses = caissesData.filter(c => filter === 'all' || c.type === filter)
+  
+  const totalCaisses = Object.values(formData.cartons).reduce((sum, qty) => sum + qty, 0)
+  const totalPrix = Object.entries(formData.cartons).reduce((sum, [slug, qty]) => {
+    const caisse = caissesData.find(c => c.slug === slug)
+    return sum + (caisse?.prix || 0) * qty
+  }, 0)
 
   return (
     <>
@@ -232,6 +254,7 @@ export default function Home() {
           position: relative; 
         }
         .caisse-header.blanc { background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); }
+        .caisse-header.rose { background: linear-gradient(135deg, #B56576 0%, #E56B6F 100%); }
         
         .caisse-badge { 
           position: absolute; 
@@ -271,6 +294,17 @@ export default function Home() {
         .lots-info {
           background: #e8f5e9;
           color: #2e7d32;
+          padding: 0.5rem 0.75rem;
+          border-radius: 8px;
+          font-size: 0.8rem;
+          font-weight: 600;
+          margin-bottom: 0.75rem;
+          text-align: center;
+        }
+        
+        .direct-order {
+          background: #fff3e0;
+          color: #e65100;
           padding: 0.5rem 0.75rem;
           border-radius: 8px;
           font-size: 0.8rem;
@@ -322,26 +356,52 @@ export default function Home() {
           margin-bottom: 1rem;
         }
         
-        .caisse-select { 
-          width: 100%; 
-          padding: 0.9rem; 
-          background: var(--wine); 
-          color: white; 
-          border: none; 
-          border-radius: 8px; 
-          font-size: 0.95rem; 
-          font-weight: 600; 
-          cursor: pointer; 
-          transition: background 0.3s; 
-          display: flex; 
-          align-items: center; 
-          justify-content: center; 
-          gap: 0.5rem; 
-          font-family: inherit;
+        .quantity-selector {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
           margin-top: auto;
         }
-        .caisse-select:hover { background: var(--wine-dark); }
-        .caisse-select.selected { background: var(--gold); color: var(--wine-dark); }
+        .qty-btn {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          border: 2px solid var(--wine);
+          background: white;
+          color: var(--wine);
+          font-size: 1.5rem;
+          font-weight: bold;
+          cursor: pointer;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: inherit;
+          line-height: 1;
+        }
+        .qty-btn:hover:not(:disabled) {
+          background: var(--wine);
+          color: white;
+        }
+        .qty-btn:disabled {
+          opacity: 0.3;
+          cursor: not-allowed;
+        }
+        .qty-display {
+          min-width: 80px;
+          text-align: center;
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: #888;
+          padding: 0.5rem;
+        }
+        .qty-display.has-qty {
+          background: var(--gold);
+          color: var(--wine-dark);
+          border-radius: 8px;
+          font-weight: 700;
+        }
         
         .form-section { 
           background: white; 
@@ -440,6 +500,11 @@ export default function Home() {
           margin-bottom: 1rem; 
         }
         .selected-summary h4 { color: var(--wine-dark); margin-bottom: 0.5rem; font-size: 0.95rem; }
+        .selected-item {
+          display: flex;
+          justify-content: space-between;
+          padding: 0.25rem 0;
+        }
         
         .how-it-works { 
           background: var(--wine-dark); 
@@ -518,7 +583,7 @@ export default function Home() {
 
       <header className="hero">
         <h1>🍷 Le Club BonBouchon</h1>
-        <p>Caisses de 6 bouteilles sélectionnées par François, à partager entre amis. Système d'achat groupé : 3 personnes minimum par type de caisse.</p>
+        <p>Caisses de 6 bouteilles sélectionnées par François, à partager entre amis. Système d'achat groupé selon les caisses.</p>
         <span className="badge-hero">Sélection Noël 2025 • Retrait chez François</span>
       </header>
 
@@ -537,26 +602,27 @@ export default function Home() {
                 Chaque bouteille de notre sélection provient de domaines soigneusement choisis pour leur savoir-faire et la qualité irréprochable de leurs cuvées.
               </p>
               <p>
-                De Bordeaux à la Bourgogne, découvrez des vins qui racontent une histoire : celle de vignerons passionnés et de terroirs uniques, sélectionnés pour vous offrir une expérience œnologique mémorable en cette fin d'année.
+                De Bordeaux à la Bourgogne, en passant par la Vallée du Rhône et la Champagne, découvrez des vins qui racontent une histoire : celle de vignerons passionnés et de terroirs uniques.
               </p>
             </div>
             <div className="about-highlight">
               <h3>🏆 Domaines Partenaires</h3>
               <p>Notre sélection met à l'honneur des domaines reconnus pour leur excellence :</p>
               <p className="domaines-list">
-                Domaine Perraud • Domaine Chantal Lescure • Domaine Chofflet • Domaine Marchand-Grillot • Domaine Charly Nicolle • Domaine Saumaize Michelin • Domaine Alex Gambal • Domaine Brintet • Emmanuel Roux • Domaine de l'Aurage
+                Domaine Perraud • Domaine Chantal Lescure • Domaine Chofflet • Domaine Marchand-Grillot • Domaine Charly Nicolle • Domaine Saumaize Michelin • Domaine Alex Gambal • Domaine Brintet • Emmanuel Roux • Domaine de l'Aurage • Domaine Alain Gras • Domaine Cristia • Domaine des Hauts Châssis • Domaine Pierre Jean Villa • Domaine Stéphane Pichat • Domaine Louis Chomel • Champagne Castelger
               </p>
             </div>
           </div>
         </section>
 
         <h2 className="section-title">Nos Caisses</h2>
-        <p className="section-subtitle">Sélectionnez un ou plusieurs types de caisse pour manifester votre intérêt</p>
+        <p className="section-subtitle">Sélectionnez vos caisses et indiquez la quantité souhaitée</p>
 
         <div className="filters">
           <button className={`filter-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>Toutes</button>
           <button className={`filter-btn ${filter === 'rouge' ? 'active' : ''}`} onClick={() => setFilter('rouge')}>🍷 Rouges</button>
           <button className={`filter-btn ${filter === 'blanc' ? 'active' : ''}`} onClick={() => setFilter('blanc')}>🥂 Blancs</button>
+          <button className={`filter-btn ${filter === 'rose' ? 'active' : ''}`} onClick={() => setFilter('rose')}>🌸 Rosés</button>
         </div>
 
         {loadingCartons ? (
@@ -566,11 +632,13 @@ export default function Home() {
         ) : (
           <div className="caisses-grid">
             {filteredCaisses.map((caisse) => {
-              const countData = counts[caisse.slug] || { current: 0, completeLots: 0 }
+              const countData = counts[caisse.slug] || { current: 0, completeLots: 0, minPersonnes: 3 }
               const currentCount = typeof countData === 'object' ? countData.current : countData
               const completeLots = typeof countData === 'object' ? countData.completeLots : 0
-              const progress = Math.min((currentCount / 3) * 100, 100)
-              const isSelected = formData.cartons.includes(caisse.slug)
+              const minPersonnes = caisse.min_personnes || countData.minPersonnes || 3
+              const progress = Math.min((currentCount / minPersonnes) * 100, 100)
+              const selectedQty = formData.cartons[caisse.slug] || 0
+              const isDirectOrder = minPersonnes === 1
 
               return (
                 <div key={caisse.slug} className="caisse-card">
@@ -582,18 +650,30 @@ export default function Home() {
                   <div className="caisse-body">
                     <div className="caisse-price">{caisse.prix}€ <span>TTC la caisse</span></div>
                     
-                    {completeLots > 0 && (
+                    {isDirectOrder && (
+                      <div className="direct-order">
+                        ⚡ Commande directe (pas de groupement)
+                      </div>
+                    )}
+                    
+                    {completeLots > 0 && !isDirectOrder && (
                       <div className="lots-info">
                         ✅ {completeLots} lot{completeLots > 1 ? 's' : ''} déjà complet{completeLots > 1 ? 's' : ''} !
                       </div>
                     )}
                     
+                    {completeLots > 0 && isDirectOrder && (
+                      <div className="lots-info">
+                        ✅ {completeLots} commande{completeLots > 1 ? 's' : ''} confirmée{completeLots > 1 ? 's' : ''} !
+                      </div>
+                    )}
+                    
                     <div className="caisse-vins">
-                      <h4>Composition (6 bouteilles)</h4>
+                      <h4>Composition ({(caisse.vins || []).reduce((sum, v) => sum + (v.quantite || 2), 0)} bouteilles)</h4>
                       {(caisse.vins || []).map((vin, i) => (
                         <div key={i} className="vin-item">
                           <div className="vin-name">
-                            2× {vin.nom}
+                            {vin.quantite || 2}× {vin.nom}
                             {vin.domaine && <div className="vin-domaine">{vin.domaine}</div>}
                           </div>
                           <div className="vin-price">{vin.prix}€</div>
@@ -601,20 +681,37 @@ export default function Home() {
                       ))}
                     </div>
 
-                    <div className="progress-bar">
-                      <div className="progress-fill" style={{ width: `${progress}%` }}></div>
-                    </div>
-                    <div className="progress-text">
-                      <span>Lot en cours : {currentCount}/3</span>
-                      <span>{currentCount >= 3 ? '✅ Complet !' : `${3 - currentCount} de plus`}</span>
-                    </div>
+                    {!isDirectOrder && (
+                      <>
+                        <div className="progress-bar">
+                          <div className="progress-fill" style={{ width: `${progress}%` }}></div>
+                        </div>
+                        <div className="progress-text">
+                          <span>Lot en cours : {currentCount}/{minPersonnes}</span>
+                          <span>{currentCount >= minPersonnes ? '✅ Complet !' : `${minPersonnes - currentCount} de plus`}</span>
+                        </div>
+                      </>
+                    )}
 
-                    <button 
-                      className={`caisse-select ${isSelected ? 'selected' : ''}`}
-                      onClick={() => handleCheckboxChange(caisse.slug)}
-                    >
-                      {isSelected ? '✓ Sélectionnée' : 'Je suis intéressé(e)'}
-                    </button>
+                    <div className="quantity-selector">
+                      <button 
+                        className="qty-btn" 
+                        onClick={() => updateQuantity(caisse.slug, -1)}
+                        disabled={selectedQty === 0}
+                      >
+                        −
+                      </button>
+                      <div className={`qty-display ${selectedQty > 0 ? 'has-qty' : ''}`}>
+                        {selectedQty > 0 ? `${selectedQty} caisse${selectedQty > 1 ? 's' : ''}` : '0'}
+                      </div>
+                      <button 
+                        className="qty-btn" 
+                        onClick={() => updateQuantity(caisse.slug, 1)}
+                        disabled={selectedQty >= 10}
+                      >
+                        +
+                      </button>
+                    </div>
                   </div>
                 </div>
               )
@@ -625,7 +722,7 @@ export default function Home() {
         {success ? (
           <div className="form-section success-message">
             <h3>🎉 Merci pour votre intention !</h3>
-            <p>Vous recevrez un email de confirmation. Dès que 3 personnes seront intéressées par un lot, nous vous enverrons le lien de paiement.</p>
+            <p>Vous recevrez un email de confirmation. Vous serez notifié dès que votre commande sera confirmée.</p>
             <button className="submit-btn" onClick={() => setSuccess(false)} style={{ marginTop: '1rem', maxWidth: '300px' }}>
               Nouvelle sélection
             </button>
@@ -637,16 +734,23 @@ export default function Home() {
 
             {error && <div className="error-message">{error}</div>}
 
-            {formData.cartons.length > 0 && (
+            {totalCaisses > 0 && (
               <div className="selected-summary">
-                <h4>Type(s) de caisse sélectionné(s) :</h4>
-                {formData.cartons.map(slug => {
+                <h4>Récapitulatif de votre sélection :</h4>
+                {Object.entries(formData.cartons).filter(([_, qty]) => qty > 0).map(([slug, qty]) => {
                   const caisse = caissesData.find(c => c.slug === slug)
-                  return <div key={slug}>• {caisse?.nom} - {caisse?.prix}€</div>
+                  return (
+                    <div key={slug} className="selected-item">
+                      <span>{qty}× {caisse?.nom}</span>
+                      <span>{(caisse?.prix || 0) * qty}€</span>
+                    </div>
+                  )
                 })}
-                <strong style={{ display: 'block', marginTop: '0.5rem', color: 'var(--wine)' }}>
-                  Total : {formData.cartons.reduce((sum, slug) => sum + (caissesData.find(c => c.slug === slug)?.prix || 0), 0)}€
-                </strong>
+                <hr style={{ margin: '0.5rem 0', border: 'none', borderTop: '1px solid #ddd' }} />
+                <div className="selected-item" style={{ fontWeight: 'bold', color: 'var(--wine)' }}>
+                  <span>Total ({totalCaisses} caisse{totalCaisses > 1 ? 's' : ''})</span>
+                  <span>{totalPrix}€</span>
+                </div>
               </div>
             )}
 
@@ -677,12 +781,12 @@ export default function Home() {
                 onChange={e => setFormData({...formData, acceptCgv: e.target.checked})}
               />
               <label htmlFor="acceptCgv">
-                J'ai lu et j'accepte les <Link href="/cgv" target="_blank">Conditions Générales de Vente</Link> et la <Link href="/confidentialite" target="_blank">Politique de Confidentialité</Link>. Je comprends que mon intention ne constitue pas une commande ferme et que le paiement ne sera requis qu'une fois le seuil de 3 participants atteint.
+                J'ai lu et j'accepte les <Link href="/cgv" target="_blank">Conditions Générales de Vente</Link> et la <Link href="/confidentialite" target="_blank">Politique de Confidentialité</Link>. Je comprends que mon intention ne constitue pas une commande ferme et que le paiement ne sera requis qu'une fois ma commande confirmée.
               </label>
             </div>
 
-            <button type="submit" className="submit-btn" disabled={loading || formData.cartons.length === 0 || !formData.acceptCgv}>
-              {loading ? 'Envoi en cours...' : formData.cartons.length === 0 ? 'Sélectionnez au moins un type de caisse' : !formData.acceptCgv ? 'Acceptez les CGV pour continuer' : `Valider mon intention (${formData.cartons.length} caisse${formData.cartons.length > 1 ? 's' : ''})`}
+            <button type="submit" className="submit-btn" disabled={loading || totalCaisses === 0 || !formData.acceptCgv}>
+              {loading ? 'Envoi en cours...' : totalCaisses === 0 ? 'Sélectionnez au moins une caisse' : !formData.acceptCgv ? 'Acceptez les CGV pour continuer' : `Valider mon intention (${totalCaisses} caisse${totalCaisses > 1 ? 's' : ''} • ${totalPrix}€)`}
             </button>
           </form>
         )}
@@ -694,22 +798,22 @@ export default function Home() {
           <div className="step">
             <div className="step-number">1</div>
             <h3>Choisissez</h3>
-            <p>Sélectionnez les types de caisse qui vous intéressent et remplissez le formulaire.</p>
+            <p>Sélectionnez les caisses et les quantités qui vous intéressent.</p>
           </div>
           <div className="step">
             <div className="step-number">2</div>
-            <h3>Attendez</h3>
-            <p>Dès que 3 personnes sont intéressées par un lot, vous recevez le lien de paiement.</p>
+            <h3>Confirmez</h3>
+            <p>Pour certaines caisses, attendez que le minimum de participants soit atteint.</p>
           </div>
           <div className="step">
             <div className="step-number">3</div>
             <h3>Payez</h3>
-            <p>Réglez votre caisse en ligne. La commande est passée une fois les 3 paiements reçus.</p>
+            <p>Recevez le lien de paiement et réglez vos caisses en ligne.</p>
           </div>
           <div className="step">
             <div className="step-number">4</div>
             <h3>Récupérez</h3>
-            <p>Venez chercher votre caisse chez François en décembre. Santé !</p>
+            <p>Venez chercher vos caisses chez François en décembre. Santé !</p>
           </div>
         </div>
       </section>
