@@ -21,12 +21,10 @@ export default async function handler(req, res) {
 
   const { name, email, phone, cartons, message } = req.body
 
-  // cartons est maintenant un objet { slug: quantité }
   if (!name || !email || !cartons || typeof cartons !== 'object') {
     return res.status(400).json({ error: 'Données manquantes' })
   }
 
-  // Convertir l'objet en liste avec quantités
   const cartonsWithQty = Object.entries(cartons)
     .filter(([_, qty]) => qty > 0)
     .map(([slug, qty]) => ({ slug, qty }))
@@ -36,7 +34,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Récupérer les infos des cartons
     const slugs = cartonsWithQty.map(c => c.slug)
     const { data: cartonsData } = await supabase
       .from('cartons')
@@ -45,17 +42,21 @@ export default async function handler(req, res) {
 
     const caissesInfo = {}
     cartonsData?.forEach(c => {
-      caissesInfo[c.slug] = { nom: c.nom, prix: c.prix, type: c.type }
+      caissesInfo[c.slug] = { 
+        nom: c.nom, 
+        prix: c.prix, 
+        type: c.type,
+        minPersonnes: c.min_personnes || 3
+      }
     })
 
     const results = []
     const lotsCompleted = []
 
-    // Traiter chaque caisse avec sa quantité
     for (const { slug: carton, qty } of cartonsWithQty) {
-      // Pour chaque unité de cette caisse
+      const minPersonnes = caissesInfo[carton]?.minPersonnes || 3
+
       for (let i = 0; i < qty; i++) {
-        // Trouver le numéro de lot en cours (non complet)
         const { data: currentLotIntentions } = await supabase
           .from('intentions')
           .select('lot_number')
@@ -68,7 +69,6 @@ export default async function handler(req, res) {
         if (currentLotIntentions && currentLotIntentions.length > 0) {
           lotNumber = currentLotIntentions[0].lot_number
         } else {
-          // Vérifier s'il y a des lots complets pour commencer au bon numéro
           const { data: completeLots } = await supabase
             .from('intentions')
             .select('lot_number')
@@ -82,7 +82,6 @@ export default async function handler(req, res) {
           }
         }
 
-        // Insérer l'intention
         await supabase.from('intentions').insert({
           name,
           email,
@@ -94,7 +93,6 @@ export default async function handler(req, res) {
           status: 'pending'
         })
 
-        // Compter les intentions de ce lot
         const { count } = await supabase
           .from('intentions')
           .select('*', { count: 'exact', head: true })
@@ -102,11 +100,10 @@ export default async function handler(req, res) {
           .eq('lot_number', lotNumber)
           .eq('lot_complete', false)
 
-        results.push({ carton, lotNumber, count, unit: i + 1 })
+        results.push({ carton, lotNumber, count, unit: i + 1, minPersonnes })
 
-        // Si 3 personnes atteintes, marquer le lot comme complet
-        if (count >= 3) {
-          // Récupérer toutes les intentions de ce lot
+        // Utilise minPersonnes au lieu de 3
+        if (count >= minPersonnes) {
           const { data: lotIntentions } = await supabase
             .from('intentions')
             .select('*')
@@ -114,7 +111,6 @@ export default async function handler(req, res) {
             .eq('lot_number', lotNumber)
             .eq('lot_complete', false)
 
-          // Marquer le lot comme complet
           await supabase
             .from('intentions')
             .update({ lot_complete: true })
@@ -131,22 +127,25 @@ export default async function handler(req, res) {
     for (const lot of lotsCompleted) {
       for (const intention of (lot.intentions || [])) {
         try {
+          const minP = lot.info?.minPersonnes || 3
           await transporter.sendMail({
             from: `"Le Club BonBouchon" <${process.env.GMAIL_USER}>`,
             to: intention.email,
-            subject: `🎉 Lot #${lot.lotNumber} ${lot.info?.nom} complet ! 3 intéressés atteints`,
+            subject: `🎉 ${minP === 1 ? 'Commande confirmée' : `Lot #${lot.lotNumber} complet`} - ${lot.info?.nom}`,
             html: `
               <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto;">
                 <div style="background: linear-gradient(135deg, #4A1F24 0%, #722F37 100%); color: #FAF7F2; padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
-                  <h1>🎉 Bonne nouvelle !</h1>
+                  <h1>🎉 ${minP === 1 ? 'Commande confirmée !' : 'Bonne nouvelle !'}</h1>
                 </div>
                 <div style="background: #FAF7F2; padding: 30px; border-radius: 0 0 8px 8px;">
                   <p>Bonjour <strong>${intention.name}</strong>,</p>
                   <div style="background: #d4edda; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
-                    <p style="font-size: 2rem; margin: 0;">🟢 🟢 🟢</p>
-                    <p style="color: #28a745; font-weight: bold; margin: 10px 0 0;">Lot #${lot.lotNumber} complet pour ${lot.info?.nom} !</p>
+                    <p style="font-size: 2rem; margin: 0;">${minP === 1 ? '✅' : '🟢 🟢 🟢'}</p>
+                    <p style="color: #28a745; font-weight: bold; margin: 10px 0 0;">
+                      ${minP === 1 ? `Votre caisse ${lot.info?.nom} est confirmée !` : `Lot #${lot.lotNumber} complet pour ${lot.info?.nom} !`}
+                    </p>
                   </div>
-                  <p>3 personnes sont maintenant intéressées par cette caisse. Nous allons vous envoyer très prochainement le lien de paiement.</p>
+                  <p>${minP === 1 ? 'Votre commande est enregistrée.' : `${minP} personnes sont maintenant intéressées par cette caisse.`} Nous allons vous envoyer très prochainement le lien de paiement.</p>
                   <p style="text-align: center; font-size: 1.5rem; color: #722F37; font-weight: bold;">${lot.info?.prix}€ TTC</p>
                   <p style="text-align: center; color: #666; font-size: 14px; margin-top: 30px;">Le Club BonBouchon — Sélection Noël 2025</p>
                 </div>
@@ -159,7 +158,6 @@ export default async function handler(req, res) {
       }
     }
 
-    // Préparer le récapitulatif pour l'email de confirmation
     const caissesRecap = cartonsWithQty.map(({ slug, qty }) => {
       const info = caissesInfo[slug] || { nom: slug, prix: 0 }
       return `• ${qty}× ${info.nom} - ${info.prix * qty}€ TTC`
@@ -171,7 +169,6 @@ export default async function handler(req, res) {
 
     const totalQty = cartonsWithQty.reduce((sum, { qty }) => sum + qty, 0)
 
-    // Email de confirmation au client
     await transporter.sendMail({
       from: `"Le Club BonBouchon" <${process.env.GMAIL_USER}>`,
       to: email,
@@ -189,14 +186,13 @@ export default async function handler(req, res) {
               <p style="font-size: 1.2rem; color: #722F37; font-weight: bold;">Total : ${totalQty} caisse${totalQty > 1 ? 's' : ''} — ${total}€ TTC</p>
             </div>
             <p><strong>📋 Prochaines étapes :</strong></p>
-            <p>Dès que 3 personnes sont intéressées par un lot, vous recevrez un lien de paiement par email.</p>
+            <p>Vous recevrez un lien de paiement par email dès que votre commande sera confirmée.</p>
             <p style="text-align: center; color: #666; font-size: 14px; margin-top: 30px;">Le Club BonBouchon — Sélection Noël 2025</p>
           </div>
         </div>
       `
     })
 
-    // Email à l'admin
     await transporter.sendMail({
       from: `"Le Club BonBouchon" <${process.env.GMAIL_USER}>`,
       to: process.env.GMAIL_USER,
@@ -213,7 +209,7 @@ export default async function handler(req, res) {
         <hr>
         <p><strong>Détails des lots :</strong></p>
         <ul>
-          ${results.map(r => `<li>${r.carton} (unité ${r.unit}) : Lot #${r.lotNumber} - ${r.count}/3</li>`).join('')}
+          ${results.map(r => `<li>${r.carton} (unité ${r.unit}) : Lot #${r.lotNumber} - ${r.count}/${r.minPersonnes}</li>`).join('')}
         </ul>
         ${lotsCompleted.length > 0 ? `<p style="color: green;"><strong>🎉 ${lotsCompleted.length} lot(s) complété(s) !</strong></p>` : ''}
       `
