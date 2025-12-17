@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   try {
     const { data: cartons, error } = await supabase
       .from('cartons')
-      .select('slug')
+      .select('slug, min_personnes')
       .eq('active', true)
 
     if (error || !cartons) {
@@ -24,26 +24,24 @@ export default async function handler(req, res) {
     const result = {}
 
     for (const carton of cartons) {
-      // Compter les intentions du lot en cours (non complet)
       const { count: currentLotCount } = await supabase
         .from('intentions')
         .select('*', { count: 'exact', head: true })
         .eq('caisse', carton.slug)
         .eq('lot_complete', false)
 
-      // Compter le nombre de lots complets
       const { data: completeLots } = await supabase
         .from('intentions')
         .select('lot_number')
         .eq('caisse', carton.slug)
         .eq('lot_complete', true)
 
-      // Nombre de lots complets = nombre d'intentions complètes / 3
       const uniqueCompleteLots = [...new Set((completeLots || []).map(i => i.lot_number))]
       
       result[carton.slug] = {
-        current: currentLotCount || 0,        // Intentions du lot en cours
-        completeLots: uniqueCompleteLots.length  // Nombre de lots déjà complets
+        current: currentLotCount || 0,
+        completeLots: uniqueCompleteLots.length,
+        minPersonnes: carton.min_personnes || 3
       }
     }
 
