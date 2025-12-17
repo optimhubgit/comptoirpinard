@@ -204,7 +204,7 @@ export default function Home() {
           <p className="section-subtitle">Des vins d'exception sélectionnés avec passion</p>
           <div className="about-content">
             <div className="about-text">
-              <p><strong>François</strong>, passionné de vins et amateur éclairé, a soigneusement composé cette sélection de Noël 2025 en collaboration avec des vignerons d'exception.</p>
+              <p><strong>François</strong> sélectionne et distribue des vins d'exception auprès des professionnels et des particuliers depuis 25 ans. Fort de cette expertise, il a soigneusement composé cette sélection de Noël 2025 en collaboration avec <strong>NRJ Wines</strong> et des vignerons attachés à l'expression authentique de leur terroir.</p>
               <p>Chaque bouteille provient de domaines soigneusement choisis pour leur savoir-faire et la qualité irréprochable de leurs cuvées.</p>
               <p>De Bordeaux à la Bourgogne, en passant par la Vallée du Rhône et la Champagne, découvrez des vins qui racontent une histoire.</p>
             </div>

@@ -86,6 +86,13 @@ export default function Admin() {
     return editingCarton.vins.reduce((sum, v) => sum + (parseFloat(v.prix) || 0) * (parseInt(v.quantite) || 2), 0)
   }
 
+  // Extraire les clients uniques des intentions
+  const clients = [...new Map(intentions.map(i => [i.email, { name: i.name, email: i.email, phone: i.phone }])).values()]
+  
+  // Intentions avec lot complet (prêts pour paiement)
+  const paiementsPending = intentions.filter(i => i.lot_complete && i.status !== 'paid')
+  const paiementsDone = intentions.filter(i => i.status === 'paid')
+
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Chargement...</div>
   if (!authenticated) return null
 
@@ -114,10 +121,13 @@ export default function Admin() {
         .badge-pending { background: #fff3cd; color: #856404; }
         .badge-complete { background: #d4edda; color: #155724; }
         .badge-paid { background: #cce5ff; color: #004085; }
+        .badge-waiting { background: #f8d7da; color: #721c24; }
         .btn { padding: 0.4rem 0.8rem; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
         .btn-edit { background: #e3f2fd; color: #1976d2; }
         .btn-delete { background: #ffebee; color: #c62828; }
         .btn-add { background: #722F37; color: white; padding: 0.75rem 1.5rem; font-size: 1rem; margin-bottom: 1rem; }
+        .btn-pay { background: #4caf50; color: white; }
+        .btn-pay:hover { background: #388e3c; }
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
         .modal { background: white; border-radius: 12px; padding: 2rem; max-width: 700px; width: 100%; max-height: 90vh; overflow-y: auto; }
         .modal h2 { margin-bottom: 1.5rem; color: #722F37; }
@@ -138,6 +148,15 @@ export default function Admin() {
         .btn-save { background: #722F37; color: white; border: none; }
         .checkbox-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
         .checkbox-label input { width: auto; }
+        .info-box { background: #e3f2fd; border: 1px solid #90caf9; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; color: #1565c0; }
+        .info-box h4 { margin-bottom: 0.5rem; }
+        .client-card { background: #f9f9f9; border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+        .client-info { flex: 1; }
+        .client-name { font-weight: 600; color: #333; }
+        .client-email { color: #666; font-size: 0.9rem; }
+        .client-phone { color: #888; font-size: 0.85rem; }
+        .client-stats { text-align: right; }
+        .client-orders { font-weight: 600; color: #722F37; }
         @media (max-width: 768px) {
           .form-grid { grid-template-columns: 1fr; }
           .vin-row { grid-template-columns: 1fr; }
@@ -160,8 +179,12 @@ export default function Admin() {
             <div className="stat-label">Lots complets</div>
           </div>
           <div className="stat-card">
-            <div className="stat-value">{stats.totalCaisses || 0}</div>
-            <div className="stat-label">Caisses réservées</div>
+            <div className="stat-value">{clients.length}</div>
+            <div className="stat-label">Clients</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-value">{paiementsDone.length}</div>
+            <div className="stat-label">Payés</div>
           </div>
           <div className="stat-card">
             <div className="stat-value">{stats.ca || 0}€</div>
@@ -171,10 +194,16 @@ export default function Admin() {
 
         <div className="tabs">
           <button className={`tab ${activeTab === 'intentions' ? 'active' : ''}`} onClick={() => setActiveTab('intentions')}>
-            Intentions ({intentions.length})
+            📋 Intentions ({intentions.length})
+          </button>
+          <button className={`tab ${activeTab === 'clients' ? 'active' : ''}`} onClick={() => setActiveTab('clients')}>
+            👥 Clients ({clients.length})
+          </button>
+          <button className={`tab ${activeTab === 'paiements' ? 'active' : ''}`} onClick={() => setActiveTab('paiements')}>
+            💳 Paiements ({paiementsPending.length} en attente)
           </button>
           <button className={`tab ${activeTab === 'cartons' ? 'active' : ''}`} onClick={() => setActiveTab('cartons')}>
-            Caisses ({cartons.length})
+            📦 Caisses ({cartons.length})
           </button>
         </div>
 
@@ -201,8 +230,8 @@ export default function Admin() {
                     <td>{i.caisse}</td>
                     <td>#{i.lot_number}</td>
                     <td>
-                      <span className={`badge ${i.lot_complete ? 'badge-complete' : 'badge-pending'}`}>
-                        {i.lot_complete ? 'Lot complet' : 'En attente'}
+                      <span className={`badge ${i.status === 'paid' ? 'badge-paid' : i.lot_complete ? 'badge-complete' : 'badge-pending'}`}>
+                        {i.status === 'paid' ? '💳 Payé' : i.lot_complete ? '✅ Lot complet' : '⏳ En attente'}
                       </span>
                     </td>
                     <td>
@@ -215,6 +244,130 @@ export default function Admin() {
                 )}
               </tbody>
             </table>
+          )}
+
+          {activeTab === 'clients' && (
+            <>
+              <div className="info-box">
+                <h4>👥 Liste des clients</h4>
+                <p>Tous les clients ayant manifesté une intention d'achat.</p>
+              </div>
+              {clients.length === 0 ? (
+                <p style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>Aucun client</p>
+              ) : (
+                clients.map((client, idx) => {
+                  const clientIntentions = intentions.filter(i => i.email === client.email)
+                  const totalCaisses = clientIntentions.length
+                  const totalPaye = clientIntentions.filter(i => i.status === 'paid').length
+                  return (
+                    <div key={idx} className="client-card">
+                      <div className="client-info">
+                        <div className="client-name">{client.name}</div>
+                        <div className="client-email">📧 {client.email}</div>
+                        {client.phone && <div className="client-phone">📱 {client.phone}</div>}
+                      </div>
+                      <div className="client-stats">
+                        <div className="client-orders">{totalCaisses} caisse{totalCaisses > 1 ? 's' : ''}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#666' }}>
+                          {totalPaye > 0 ? `${totalPaye} payée${totalPaye > 1 ? 's' : ''}` : 'Non payé'}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </>
+          )}
+
+          {activeTab === 'paiements' && (
+            <>
+              <div className="info-box">
+                <h4>💳 Gestion des paiements</h4>
+                <p>Stripe n'est pas encore intégré. Vous pouvez marquer manuellement les paiements comme effectués.</p>
+              </div>
+              
+              <h3 style={{ margin: '1.5rem 0 1rem', color: '#722F37' }}>En attente de paiement ({paiementsPending.length})</h3>
+              {paiementsPending.length === 0 ? (
+                <p style={{ padding: '1rem', color: '#666', background: '#f9f9f9', borderRadius: '8px' }}>Aucun paiement en attente</p>
+              ) : (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Client</th>
+                      <th>Email</th>
+                      <th>Caisse</th>
+                      <th>Lot</th>
+                      <th>Prix</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paiementsPending.map(i => {
+                      const carton = cartons.find(c => c.slug === i.caisse)
+                      return (
+                        <tr key={i.id}>
+                          <td>{i.name}</td>
+                          <td>{i.email}</td>
+                          <td>{carton?.nom || i.caisse}</td>
+                          <td>#{i.lot_number}</td>
+                          <td><strong>{carton?.prix || '?'}€</strong></td>
+                          <td>
+                            <button 
+                              className="btn btn-pay" 
+                              onClick={async () => {
+                                if (confirm(`Marquer comme payé : ${i.name} - ${carton?.nom} ?`)) {
+                                  await fetch('/api/admin/intentions', {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ id: i.id, status: 'paid' })
+                                  })
+                                  fetchData()
+                                }
+                              }}
+                            >
+                              ✓ Marquer payé
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              )}
+
+              <h3 style={{ margin: '2rem 0 1rem', color: '#2e7d32' }}>Paiements effectués ({paiementsDone.length})</h3>
+              {paiementsDone.length === 0 ? (
+                <p style={{ padding: '1rem', color: '#666', background: '#f9f9f9', borderRadius: '8px' }}>Aucun paiement effectué</p>
+              ) : (
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Client</th>
+                      <th>Email</th>
+                      <th>Caisse</th>
+                      <th>Lot</th>
+                      <th>Prix</th>
+                      <th>Statut</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paiementsDone.map(i => {
+                      const carton = cartons.find(c => c.slug === i.caisse)
+                      return (
+                        <tr key={i.id}>
+                          <td>{i.name}</td>
+                          <td>{i.email}</td>
+                          <td>{carton?.nom || i.caisse}</td>
+                          <td>#{i.lot_number}</td>
+                          <td><strong>{carton?.prix || '?'}€</strong></td>
+                          <td><span className="badge badge-paid">💳 Payé</span></td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </>
           )}
 
           {activeTab === 'cartons' && (
