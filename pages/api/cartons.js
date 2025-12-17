@@ -31,11 +31,16 @@ export default async function handler(req, res) {
       console.error('Erreur vins:', vinsError)
     }
 
-    const cartonsWithVins = (cartons || []).map(carton => ({
-      ...carton,
-      vins: (vins || []).filter(v => v.carton_id === carton.id),
-      prixBouteille: `${(carton.prix / 6).toFixed(2)}€`
-    }))
+    const cartonsWithVins = (cartons || []).map(carton => {
+      const cartonVins = (vins || []).filter(v => v.carton_id === carton.id)
+      const totalBouteilles = cartonVins.reduce((sum, v) => sum + (v.quantite || 2), 0)
+      return {
+        ...carton,
+        vins: cartonVins,
+        totalBouteilles,
+        prixBouteille: `${(carton.prix / totalBouteilles).toFixed(2)}€`
+      }
+    })
 
     res.status(200).json(cartonsWithVins)
   } catch (error) {
