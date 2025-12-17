@@ -132,6 +132,7 @@ export default function Home() {
         .caisse-header { background: linear-gradient(135deg, var(--wine-dark) 0%, var(--wine) 100%); color: white; padding: 1.25rem; padding-top: 2.5rem; position: relative; }
         .caisse-header.blanc { background: linear-gradient(135deg, #8B7355 0%, #A08060 100%); }
         .caisse-header.rose { background: linear-gradient(135deg, #B56576 0%, #E56B6F 100%); }
+        .caisse-header.champagne { background: linear-gradient(135deg, #B8860B 0%, #DAA520 100%); }
         .caisse-badge { position: absolute; top: 0.75rem; right: 0.75rem; background: var(--gold); color: var(--wine-dark); padding: 0.2rem 0.6rem; border-radius: 15px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; }
         .caisse-title { font-family: 'Playfair Display', serif; font-size: 1.25rem; margin-bottom: 0.25rem; line-height: 1.3; }
         .caisse-region { opacity: 0.9; font-size: 0.85rem; }
@@ -222,7 +223,7 @@ export default function Home() {
           <button className={`filter-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>Toutes</button>
           <button className={`filter-btn ${filter === 'rouge' ? 'active' : ''}`} onClick={() => setFilter('rouge')}>🍷 Rouges</button>
           <button className={`filter-btn ${filter === 'blanc' ? 'active' : ''}`} onClick={() => setFilter('blanc')}>🥂 Blancs</button>
-          <button className={`filter-btn ${filter === 'rose' ? 'active' : ''}`} onClick={() => setFilter('rose')}>🌸 Rosés</button>
+          <button className={`filter-btn ${filter === 'champagne' ? 'active' : ''}`} onClick={() => setFilter('champagne')}>🍾 Champagne</button>
         </div>
 
         {loadingCartons ? (

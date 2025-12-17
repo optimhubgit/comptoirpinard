@@ -280,6 +280,7 @@ export default function Admin() {
                     <option value="rouge">Rouge</option>
                     <option value="blanc">Blanc</option>
                     <option value="rose">Rosé</option>
+                    <option value="champagne">Champagne</option>
                   </select>
                 </div>
                 <div className="form-group">

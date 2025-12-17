@@ -97,10 +97,10 @@ INSERT INTO cartons (slug, nom, region, type, badge, prix, min_personnes, active
 ('rhone-blanc', 'Rhône Blanc', 'Vallée du Rhône', 'blanc', 'Blanc • Sélection', 128, 3, true, 10),
 
 -- CHAMPAGNE CASTELGER (1 personne - pas besoin de groupement)
-('champagne-trilogie', 'Champagne Castelger Trilogie', 'Champagne', 'blanc', 'Champagne • Brut', 138, 1, true, 11),
-('champagne-blanc-de-blancs', 'Champagne Castelger Blanc de Blancs', 'Champagne', 'blanc', 'Champagne • Zéro Dosage', 156, 1, true, 12),
-('champagne-rose', 'Champagne Castelger Rosé', 'Champagne', 'rose', 'Champagne • Rosé', 150, 1, true, 13),
-('champagne-ancestrale', 'Champagne Castelger Ancestrale', 'Champagne', 'blanc', 'Champagne • Prestige', 234, 1, true, 14);
+('champagne-trilogie', 'Champagne Castelger Trilogie', 'Champagne', 'champagne', 'Champagne • Brut', 138, 1, true, 11),
+('champagne-blanc-de-blancs', 'Champagne Castelger Blanc de Blancs', 'Champagne', 'champagne', 'Champagne • Zéro Dosage', 156, 1, true, 12),
+('champagne-rose', 'Champagne Castelger Rosé', 'Champagne', 'champagne', 'Champagne • Rosé', 150, 1, true, 13),
+('champagne-ancestrale', 'Champagne Castelger Ancestrale', 'Champagne', 'champagne', 'Champagne • Prestige', 234, 1, true, 14);
 
 -- =============================================
 -- INSERTION DES VINS
