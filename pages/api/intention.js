@@ -102,7 +102,6 @@ export default async function handler(req, res) {
 
         results.push({ carton, lotNumber, count, unit: i + 1, minPersonnes })
 
-        // Utilise minPersonnes au lieu de 3
         if (count >= minPersonnes) {
           const { data: lotIntentions } = await supabase
             .from('intentions')
@@ -123,7 +122,6 @@ export default async function handler(req, res) {
       }
     }
 
-    // Envoyer les emails pour les lots complétés
     for (const lot of lotsCompleted) {
       for (const intention of (lot.intentions || [])) {
         try {

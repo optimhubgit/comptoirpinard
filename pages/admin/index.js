@@ -127,6 +127,7 @@ export default function Admin() {
         .form-group label { display: block; margin-bottom: 0.4rem; font-weight: 500; color: #333; }
         .form-group input, .form-group select { width: 100%; padding: 0.6rem; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
         .form-group input:focus, .form-group select:focus { outline: none; border-color: #722F37; }
+        .form-group small { color: #666; font-size: 0.75rem; display: block; margin-top: 0.25rem; }
         .vins-section { border-top: 1px solid #eee; padding-top: 1rem; margin-top: 1rem; }
         .vin-row { display: grid; grid-template-columns: 2fr 1.5fr 1fr 1fr auto; gap: 0.5rem; align-items: end; margin-bottom: 0.5rem; }
         .vin-row input { padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; }
@@ -292,7 +293,7 @@ export default function Admin() {
                 <div className="form-group">
                   <label>Min. personnes pour un lot</label>
                   <input type="number" min="1" max="10" value={editingCarton?.min_personnes || 3} onChange={e => setEditingCarton({...editingCarton, min_personnes: parseInt(e.target.value) || 3})} />
-                  <small style={{ color: '#666', fontSize: '0.75rem' }}>1 = pas de groupement (ex: Champagne)</small>
+                  <small>1 = commande directe (ex: Champagne), 3 = achat groupé</small>
                 </div>
                 <div className="form-group">
                   <label className="checkbox-label">

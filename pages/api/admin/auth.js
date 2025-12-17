@@ -1,48 +1,42 @@
-import crypto from 'crypto'
+const COOKIE_NAME = 'admin_session'
 
-// Générer un token basé sur le mot de passe admin (valide 24h)
-function generateToken() {
-  const today = new Date().toISOString().split('T')[0]
-  return crypto
-    .createHash('sha256')
-    .update((process.env.ADMIN_PASSWORD || 'default') + today + 'selection-vins-secret')
-    .digest('hex')
+function parseCookies(cookieHeader) {
+  const cookies = {}
+  if (!cookieHeader) return cookies
+  cookieHeader.split(';').forEach(cookie => {
+    const [name, value] = cookie.trim().split('=')
+    if (name && value) cookies[name] = decodeURIComponent(value)
+  })
+  return cookies
 }
 
-export default function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Méthode non autorisée' })
+export default async function handler(req, res) {
+  if (req.method === 'POST') {
+    const { password } = req.body
+    
+    if (password === process.env.ADMIN_PASSWORD) {
+      const isProduction = process.env.NODE_ENV === 'production'
+      const cookie = `${COOKIE_NAME}=authenticated; HttpOnly; Path=/; Max-Age=${60 * 60 * 24}; SameSite=Strict${isProduction ? '; Secure' : ''}`
+      res.setHeader('Set-Cookie', cookie)
+      return res.status(200).json({ success: true })
+    }
+    return res.status(401).json({ error: 'Mot de passe incorrect' })
   }
 
-  const { password } = req.body
-
-  if (!process.env.ADMIN_PASSWORD) {
-    console.error('ADMIN_PASSWORD non configuré!')
-    return res.status(500).json({ error: 'Configuration manquante - ajoutez ADMIN_PASSWORD dans Vercel' })
+  if (req.method === 'GET') {
+    const cookies = parseCookies(req.headers.cookie)
+    if (cookies[COOKIE_NAME] === 'authenticated') {
+      return res.status(200).json({ authenticated: true })
+    }
+    return res.status(401).json({ authenticated: false })
   }
 
-  if (password === process.env.ADMIN_PASSWORD) {
-    const token = generateToken()
-    res.status(200).json({ success: true, token })
-  } else {
-    res.status(401).json({ error: 'Mot de passe incorrect' })
+  if (req.method === 'DELETE') {
+    const isProduction = process.env.NODE_ENV === 'production'
+    const cookie = `${COOKIE_NAME}=; HttpOnly; Path=/; Max-Age=0; SameSite=Strict${isProduction ? '; Secure' : ''}`
+    res.setHeader('Set-Cookie', cookie)
+    return res.status(200).json({ success: true })
   }
-}
 
-export function verifyAdminToken(token) {
-  if (!token || !process.env.ADMIN_PASSWORD) return false
-  
-  const today = new Date().toISOString().split('T')[0]
-  const validToken = crypto
-    .createHash('sha256')
-    .update(process.env.ADMIN_PASSWORD + today + 'selection-vins-secret')
-    .digest('hex')
-  
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
-  const yesterdayToken = crypto
-    .createHash('sha256')
-    .update(process.env.ADMIN_PASSWORD + yesterday + 'selection-vins-secret')
-    .digest('hex')
-  
-  return token === validToken || token === yesterdayToken
+  return res.status(405).json({ error: 'Méthode non autorisée' })
 }

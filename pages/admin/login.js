@@ -3,10 +3,10 @@ import { useRouter } from 'next/router'
 import Head from 'next/head'
 
 export default function AdminLogin() {
+  const router = useRouter()
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -20,13 +20,10 @@ export default function AdminLogin() {
         body: JSON.stringify({ password })
       })
 
-      const data = await res.json()
-
       if (res.ok) {
-        localStorage.setItem('admin_token', data.token)
         router.push('/admin')
       } else {
-        setError(data.error || 'Mot de passe incorrect')
+        setError('Mot de passe incorrect')
       }
     } catch (err) {
       setError('Erreur de connexion')
@@ -38,57 +35,98 @@ export default function AdminLogin() {
   return (
     <>
       <Head>
-        <title>Admin - Connexion | Sélection Vins</title>
-        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet" />
+        <title>Admin - Connexion</title>
       </Head>
-
-      <style jsx global>{`
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-          font-family: 'Montserrat', sans-serif;
-          background: linear-gradient(135deg, #4A1F24 0%, #722F37 100%);
+      <style jsx>{`
+        .login-container {
           min-height: 100vh;
           display: flex;
           align-items: center;
           justify-content: center;
+          background: linear-gradient(135deg, #4A1F24 0%, #722F37 100%);
+          padding: 1rem;
         }
-        .login-container {
+        .login-box {
           background: white;
-          padding: 3rem;
-          border-radius: 16px;
-          box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+          padding: 2rem;
+          border-radius: 12px;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.3);
           width: 100%;
           max-width: 400px;
-          margin: 1rem;
         }
-        .logo { text-align: center; margin-bottom: 2rem; }
-        .logo span { font-size: 3rem; }
-        h1 { text-align: center; color: #4A1F24; font-size: 1.5rem; margin-bottom: 0.5rem; }
-        .subtitle { text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 2rem; }
-        .form-group { margin-bottom: 1.5rem; }
-        label { display: block; font-size: 0.8rem; font-weight: 500; color: #333; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
-        input { width: 100%; padding: 1rem; font-size: 1rem; border: 2px solid #e0e0e0; border-radius: 8px; transition: border-color 0.3s; font-family: inherit; }
-        input:focus { outline: none; border-color: #722F37; }
-        .btn { width: 100%; padding: 1rem; font-size: 1rem; font-weight: 600; color: white; background: linear-gradient(135deg, #722F37 0%, #4A1F24 100%); border: none; border-radius: 8px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; font-family: inherit; }
-        .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(114, 47, 55, 0.4); }
-        .btn:disabled { opacity: 0.7; cursor: not-allowed; }
-        .error { background: #fee; color: #c00; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; text-align: center; font-size: 0.9rem; }
+        h1 {
+          text-align: center;
+          color: #722F37;
+          margin-bottom: 1.5rem;
+          font-family: Georgia, serif;
+        }
+        .form-group {
+          margin-bottom: 1rem;
+        }
+        label {
+          display: block;
+          margin-bottom: 0.5rem;
+          font-weight: 500;
+        }
+        input {
+          width: 100%;
+          padding: 0.75rem;
+          border: 2px solid #eee;
+          border-radius: 8px;
+          font-size: 1rem;
+        }
+        input:focus {
+          outline: none;
+          border-color: #722F37;
+        }
+        button {
+          width: 100%;
+          padding: 0.75rem;
+          background: #722F37;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        button:hover {
+          background: #4A1F24;
+        }
+        button:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+        .error {
+          background: #f8d7da;
+          color: #721c24;
+          padding: 0.75rem;
+          border-radius: 6px;
+          margin-bottom: 1rem;
+          text-align: center;
+        }
       `}</style>
-
       <div className="login-container">
-        <div className="logo"><span>🍷</span></div>
-        <h1>Administration</h1>
-        <p className="subtitle">Le Club BonBouchon</p>
-        {error && <div className="error">{error}</div>}
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Mot de passe</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Entrez le mot de passe" required />
-          </div>
-          <button type="submit" className="btn" disabled={loading}>
-            {loading ? 'Connexion...' : 'Se connecter'}
-          </button>
-        </form>
+        <div className="login-box">
+          <h1>🍷 Admin</h1>
+          {error && <div className="error">{error}</div>}
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>Mot de passe</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoFocus
+              />
+            </div>
+            <button type="submit" disabled={loading}>
+              {loading ? 'Connexion...' : 'Se connecter'}
+            </button>
+          </form>
+        </div>
       </div>
     </>
   )

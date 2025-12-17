@@ -5,87 +5,46 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
-function calculerPrixCarton(vins) {
-  if (!vins || vins.length === 0) return 0
-  const total = vins.reduce((sum, vin) => {
-    const prix = parseFloat(vin.prix) || 0
-    const quantite = parseInt(vin.quantite) || 2
-    return sum + (prix * quantite)
-  }, 0)
-  return Math.ceil(total)
-}
-
 export default async function handler(req, res) {
-  // GET - Liste des cartons avec vins
-  if (req.method === 'GET') {
-    const { data: cartons } = await supabase.from('cartons').select('*').order('ordre')
-    const { data: vins } = await supabase.from('carton_vins').select('*').order('ordre')
-    
-    const result = (cartons || []).map(c => ({
-      ...c,
-      vins: (vins || []).filter(v => v.carton_id === c.id)
-    }))
-    return res.status(200).json(result)
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Méthode non autorisée' })
   }
 
-  // POST - Créer un carton
-  if (req.method === 'POST') {
-    const { nom, slug, region, type, badge, min_personnes, active, ordre, vins } = req.body
-    const prix = calculerPrixCarton(vins)
-    
-    const { data: carton, error } = await supabase.from('cartons').insert({
-      nom, slug, region, type, badge, prix, min_personnes: min_personnes || 3, active, ordre
-    }).select().single()
-    
-    if (error) return res.status(400).json({ error: error.message })
-    
-    if (vins && vins.length > 0) {
-      const vinsData = vins.map((v, i) => ({
-        carton_id: carton.id,
-        nom: v.nom,
-        domaine: v.domaine || null,
-        prix: parseFloat(v.prix) || 0,
-        quantite: parseInt(v.quantite) || 2,
-        ordre: i
-      }))
-      await supabase.from('carton_vins').insert(vinsData)
+  try {
+    const { data: cartons, error: cartonsError } = await supabase
+      .from('cartons')
+      .select('*')
+      .eq('active', true)
+      .order('ordre')
+
+    if (cartonsError) {
+      console.error('Erreur cartons:', cartonsError)
+      return res.status(200).json([])
     }
-    
-    return res.status(200).json({ success: true, carton })
-  }
 
-  // PUT - Modifier un carton
-  if (req.method === 'PUT') {
-    const { id, nom, slug, region, type, badge, min_personnes, active, ordre, vins } = req.body
-    const prix = calculerPrixCarton(vins)
-    
-    await supabase.from('cartons').update({
-      nom, slug, region, type, badge, prix, min_personnes: min_personnes || 3, active, ordre
-    }).eq('id', id)
-    
-    await supabase.from('carton_vins').delete().eq('carton_id', id)
-    
-    if (vins && vins.length > 0) {
-      const vinsData = vins.map((v, i) => ({
-        carton_id: id,
-        nom: v.nom,
-        domaine: v.domaine || null,
-        prix: parseFloat(v.prix) || 0,
-        quantite: parseInt(v.quantite) || 2,
-        ordre: i
-      }))
-      await supabase.from('carton_vins').insert(vinsData)
+    const { data: vins, error: vinsError } = await supabase
+      .from('carton_vins')
+      .select('*')
+      .order('ordre')
+
+    if (vinsError) {
+      console.error('Erreur vins:', vinsError)
     }
-    
-    return res.status(200).json({ success: true })
-  }
 
-  // DELETE - Supprimer un carton
-  if (req.method === 'DELETE') {
-    const { id } = req.query
-    await supabase.from('cartons').delete().eq('id', id)
-    return res.status(200).json({ success: true })
-  }
+    const cartonsWithVins = (cartons || []).map(carton => {
+      const cartonVins = (vins || []).filter(v => v.carton_id === carton.id)
+      const totalBouteilles = cartonVins.reduce((sum, v) => sum + (v.quantite || 2), 0)
+      return {
+        ...carton,
+        vins: cartonVins,
+        totalBouteilles,
+        prixBouteille: `${(carton.prix / totalBouteilles).toFixed(2)}€`
+      }
+    })
 
-  return res.status(405).json({ error: 'Méthode non autorisée' })
+    res.status(200).json(cartonsWithVins)
+  } catch (error) {
+    console.error('Erreur GET cartons:', error)
+    res.status(200).json([])
+  }
 }
